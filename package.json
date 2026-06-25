@@ -1,0 +1,58 @@
+{
+  "name": "roast-my-codebase",
+  "version": "1.0.0",
+  "description": "Get roasted. Get better. Ship faster. A CLI that analyzes your codebase and delivers brutally honest (but funny) feedback.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "roast-my-codebase": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "codebase",
+    "code-quality",
+    "roast",
+    "analysis",
+    "lint",
+    "developer-tools",
+    "dx",
+    "typescript",
+    "health-check"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "boxen": "^8.0.1",
+    "chalk": "^5.6.2",
+    "chokidar": "^5.0.0",
+    "commander": "^15.0.0",
+    "fast-glob": "^3.3.3",
+    "ora": "^9.4.1"
+  },
+  "devDependencies": {
+    "@types/chokidar": "^1.7.5",
+    "@types/node": "^26.0.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
