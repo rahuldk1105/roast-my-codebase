@@ -61,11 +61,29 @@ roast-my-codebase
 ## Usage
 
 ```bash
-# Scan current directory
+# Basic scan
 npx roast-my-codebase
 
-# Scan a specific path
+# Scan specific path
 npx roast-my-codebase ./path/to/project
+
+# Get actionable fix suggestions
+npx roast-my-codebase --fix
+
+# Watch mode (re-run on file changes)
+npx roast-my-codebase --watch
+
+# JSON output for CI/CD
+npx roast-my-codebase --json --threshold 80
+
+# Compare against a git branch
+npx roast-my-codebase --compare main
+
+# Viral features for sharing
+npx roast-my-codebase --ascii          # Big ASCII art grade
+npx roast-my-codebase --badge          # Generate SVG badge
+npx roast-my-codebase --markdown       # Markdown for PRs
+npx roast-my-codebase --markdown-file  # Save to .roast-report.md
 ```
 
 ## What gets analyzed
@@ -76,8 +94,11 @@ npx roast-my-codebase ./path/to/project
 | **TODOs** | TODO, FIXME, HACK, XXX comments |
 | **Dependencies** | Excessive or unused packages |
 | **Circular Deps** | Import cycles between modules |
-| **Structure** | Deep nesting, bloated folders |
-| **Utility Explosion** | Too many utils/helpers/common files |
+| **Structure** | Deep nesting, bloated folders, utils explosion |
+| **Complexity** | Functions with high cyclomatic complexity (15+) |
+| **Duplicates** | Copy-pasted code blocks across files |
+| **Dead Exports** | Exports that are never imported |
+| **Type Safety** | `any` usage, `@ts-ignore`, type bypasses |
 
 ## Supported projects
 
@@ -115,6 +136,126 @@ Grades:
 - **70–79** Fair
 - **60–69** Risky
 - **0–59** Chaotic
+
+## Viral / Shareable Features
+
+### ASCII Art Grade
+```bash
+roast-my-codebase --ascii
+```
+- Big, colorful letter grade at the top (A/B/C/D/F)
+- Perfect for screenshots and social media
+- Color-coded based on health score
+
+### SVG Badge Generation
+```bash
+roast-my-codebase --badge
+```
+- Generates `.roast-badge.svg` for your README
+- Shields.io-style badge showing "Health: 82/100"
+- Color-coded: green (90+), yellow-green (80+), yellow (70+), orange (60+), red (<60)
+- Embed in your README:
+  ```markdown
+  ![Codebase Health](.roast-badge.svg)
+  ```
+
+### Markdown Output
+```bash
+roast-my-codebase --markdown           # Output to stdout
+roast-my-codebase --markdown-file      # Save to .roast-report.md
+```
+- Beautiful markdown with collapsible sections
+- Perfect for GitHub PRs, Notion, and documentation
+- Includes emoji severity indicators (🔴/⚠️/ℹ️)
+- Tables for stats, blockquotes for roasts
+
+## Developer Experience Features
+
+### JSON Output for CI/CD
+```bash
+roast-my-codebase --json --threshold 80
+```
+- Machine-readable output
+- Exit code 1 if score < threshold
+- Perfect for CI pipelines
+
+### Fix Suggestions
+```bash
+roast-my-codebase --fix
+```
+- Actionable one-liner fixes for each issue
+- Specific commands (e.g., `npm uninstall unused-package`)
+- Refactoring guidance
+
+### Watch Mode
+```bash
+roast-my-codebase --watch
+```
+- Re-runs on file changes
+- Shows score delta
+- Compact summaries for quick feedback
+
+### Compare Branches
+```bash
+roast-my-codebase --compare main
+```
+- Diff current code vs. a git branch
+- Shows new issues introduced
+- Shows resolved issues
+- Score delta comparison
+
+## Customization
+
+### Config File (`.roastrc.json`)
+
+Create a `.roastrc.json` in your project root to customize behavior:
+
+```json
+{
+  "thresholds": {
+    "largeFile": 1000,
+    "extremeFile": 3000
+  },
+  "scanners": {
+    "disabled": ["test-coverage", "framework"]
+  },
+  "ignore": [
+    "**/vendor/**",
+    "**/generated/**"
+  ],
+  "deductions": {
+    "secret": -20,
+    "missingTest": -1
+  },
+  "plugins": [
+    "roast-plugin-graphql"
+  ]
+}
+```
+
+**See [CUSTOMIZATION.md](CUSTOMIZATION.md) for full documentation.**
+
+### Plugin Development
+
+Create custom scanners as npm packages:
+
+```javascript
+// roast-plugin-example/index.js
+export default {
+  name: "roast-plugin-example",
+  version: "1.0.0",
+  scanner: {
+    name: "example",
+    async scan(rootDir) {
+      const findings = [];
+      // Your scanner logic
+      return { findings };
+    }
+  }
+};
+```
+
+**See [CUSTOMIZATION.md](CUSTOMIZATION.md) for plugin development guide.**
 
 ## Contributing
 

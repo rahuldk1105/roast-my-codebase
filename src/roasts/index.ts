@@ -77,6 +77,34 @@ const typeSafetyRoasts = [
   "This codebase treats TypeScript like a linter, not a language.",
 ];
 
+const gitChurnRoasts = [
+  "This file changes more often than JavaScript frameworks.",
+  "Version control or version chaos? You decide.",
+  "This file has more revisions than a novel.",
+  "At this rate of change, git log is your documentation.",
+];
+
+const securityRoasts = [
+  "Secrets in git. Because what could go wrong?",
+  "Your API keys are public. Consider them compromised.",
+  "eval() — when you want attackers to write your code for you.",
+  "Hardcoded secrets: the gift that keeps on giving (to hackers).",
+];
+
+const testCoverageRoasts = [
+  "Tests are optional, right? Right?",
+  "This code is production-ready. Trust me.",
+  "Writing tests is for people who make mistakes.",
+  "YOLO-driven development at its finest.",
+];
+
+const frameworkRoasts = [
+  "Next.js best practices are more like Next.js suggestions, apparently.",
+  "Missing metadata — search engines love mystery pages.",
+  "Error boundaries are for people who expect errors.",
+  "Client hooks in server components: bold strategy.",
+];
+
 const verdicts = {
   excellent: [
     "Your codebase is suspiciously clean. Are you hiding something?",
@@ -204,6 +232,42 @@ export function generateRoasts(findings: Finding[]): Roast[] {
       target: typeSafety[0].file || "TypeScript",
       message: pick(typeSafetyRoasts),
       category: "type-safety",
+    });
+  }
+
+  const gitChurn = findings.filter((f) => f.category === "git-churn");
+  if (gitChurn.length > 0) {
+    roasts.push({
+      target: gitChurn[0].file || "repository",
+      message: pick(gitChurnRoasts),
+      category: "git-churn",
+    });
+  }
+
+  const security = findings.filter((f) => f.category === "secrets" || f.category === "env-in-git" || f.category === "eval-usage");
+  if (security.length > 0) {
+    roasts.push({
+      target: security[0].file || "security",
+      message: pick(securityRoasts),
+      category: "security",
+    });
+  }
+
+  const testCoverage = findings.filter((f) => f.category === "test-coverage");
+  if (testCoverage.length > 0) {
+    roasts.push({
+      target: "test coverage",
+      message: pick(testCoverageRoasts),
+      category: "test-coverage",
+    });
+  }
+
+  const framework = findings.filter((f) => f.category === "nextjs-metadata" || f.category === "nextjs-client-server" || f.category === "react-error-boundary");
+  if (framework.length > 0) {
+    roasts.push({
+      target: framework[0].file || "framework",
+      message: pick(frameworkRoasts),
+      category: "framework",
     });
   }
 

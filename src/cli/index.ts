@@ -13,14 +13,20 @@ import {
   DuplicateScanner,
   DeadExportScanner,
   TypeSafetyScanner,
+  TestCoverageScanner,
+  GitInsightsScanner,
+  SecurityScanner,
+  FrameworkScanner,
 } from "../scanners/index.js";
 import { calculateHealth } from "../scoring/index.js";
 import { generateRoasts, generateVerdict } from "../roasts/index.js";
-import { renderReport, renderJsonReport } from "../report/index.js";
+import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge } from "../report/index.js";
 import { Finding, RoastReport, Scanner, ProjectStats, HealthScore } from "../types/index.js";
 import { generateFixSuggestions } from "../fixes/index.js";
 import { startWatchMode, renderWatchSummary } from "../watch/index.js";
 import { compareWithBranch, renderComparison } from "../compare/index.js";
+import { loadConfig, isScannerDisabled } from "../config/index.js";
+import { loadPlugins } from "../plugins/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -45,15 +51,19 @@ export function createCli(): Command {
     .version(loadPackageVersion())
     .argument("[path]", "path to scan", ".")
     .option("--json", "Output results as JSON")
+    .option("--markdown", "Output results as markdown")
+    .option("--markdown-file", "Save markdown report to .roast-report.md")
     .option("--fix", "Show actionable fix suggestions")
     .option("--watch", "Watch for file changes and re-run analysis")
     .option("--compare <branch>", "Compare current codebase with a git branch")
+    .option("--badge", "Generate health badge SVG (.roast-badge.svg)")
+    .option("--ascii", "Show ASCII art grade in output")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; fix?: boolean; watch?: boolean; compare?: string; threshold?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
       const rootDir = path.resolve(targetPath);
 
       if (!fs.existsSync(rootDir)) {
@@ -65,6 +75,12 @@ export function createCli(): Command {
         console.error(`Error: "${rootDir}" is not a directory.`);
         process.exit(1);
       }
+
+      // Load configuration
+      const config = loadConfig(rootDir);
+
+      // Load plugins
+      const pluginScanners = await loadPlugins(config, rootDir);
 
       // Define scanner function for reuse in comparison mode
       const runScanners = async (scanRootDir: string): Promise<{ findings: Finding[]; health: HealthScore }> => {
@@ -106,6 +122,22 @@ export function createCli(): Command {
         const typeSafetyResult = await typeSafetyScanner.scan(scanRootDir);
         allFindings.push(...typeSafetyResult.findings);
 
+        const testCoverageScanner = new TestCoverageScanner();
+        const testCoverageResult = await testCoverageScanner.scan(scanRootDir);
+        allFindings.push(...testCoverageResult.findings);
+
+        const gitInsightsScanner = new GitInsightsScanner();
+        const gitInsightsResult = await gitInsightsScanner.scan(scanRootDir);
+        allFindings.push(...gitInsightsResult.findings);
+
+        const securityScanner = new SecurityScanner();
+        const securityResult = await securityScanner.scan(scanRootDir);
+        allFindings.push(...securityResult.findings);
+
+        const frameworkScanner = new FrameworkScanner();
+        const frameworkResult = await frameworkScanner.scan(scanRootDir);
+        allFindings.push(...frameworkResult.findings);
+
         const health = calculateHealth(allFindings);
         return { findings: allFindings, health };
       };
@@ -135,6 +167,11 @@ export function createCli(): Command {
           new DuplicateScanner(),
           new DeadExportScanner(),
           new TypeSafetyScanner(),
+          new TestCoverageScanner(),
+          new GitInsightsScanner(),
+          new SecurityScanner(),
+          new FrameworkScanner(),
+          new TypeSafetyScanner(),
         ];
 
         const projectName = getProjectName(rootDir);
@@ -158,7 +195,7 @@ export function createCli(): Command {
               fixes,
             };
 
-            console.log(renderReport(report));
+            console.log(renderReport(report, { ascii: options.ascii }));
             isFirstRun = false;
           } else {
             // Subsequent runs: show compact summary
@@ -231,6 +268,26 @@ export function createCli(): Command {
         const typeSafetyResult = await typeSafetyScanner.scan(rootDir);
         allFindings.push(...typeSafetyResult.findings);
 
+        spinner.text = "Checking test coverage...";
+        const testCoverageScanner = new TestCoverageScanner();
+        const testCoverageResult = await testCoverageScanner.scan(rootDir);
+        allFindings.push(...testCoverageResult.findings);
+
+        spinner.text = "Analyzing git history...";
+        const gitInsightsScanner = new GitInsightsScanner();
+        const gitInsightsResult = await gitInsightsScanner.scan(rootDir);
+        allFindings.push(...gitInsightsResult.findings);
+
+        spinner.text = "Scanning security surface...";
+        const securityScanner = new SecurityScanner();
+        const securityResult = await securityScanner.scan(rootDir);
+        allFindings.push(...securityResult.findings);
+
+        spinner.text = "Checking framework best practices...";
+        const frameworkScanner = new FrameworkScanner();
+        const frameworkResult = await frameworkScanner.scan(rootDir);
+        allFindings.push(...frameworkResult.findings);
+
         spinner.stop();
 
         // Calculate health
@@ -267,8 +324,26 @@ export function createCli(): Command {
           if (options.threshold !== undefined && report.health.score < options.threshold) {
             process.exit(1);
           }
+        } else if (options.markdown || options.markdownFile) {
+          const markdownOutput = renderMarkdownReport(report);
+
+          if (options.markdownFile) {
+            // Save to file
+            const outputPath = path.join(rootDir, ".roast-report.md");
+            fs.writeFileSync(outputPath, markdownOutput, "utf-8");
+            console.log(`\n✓ Markdown report saved to ${outputPath}\n`);
+          } else {
+            // Print to console
+            console.log(markdownOutput);
+          }
         } else {
-          console.log(renderReport(report));
+          console.log(renderReport(report, { ascii: options.ascii }));
+        }
+
+        // Generate badge if requested
+        if (options.badge) {
+          const badgeSvg = generateBadgeSvg(health);
+          saveBadge(badgeSvg, rootDir);
         }
       } catch (error) {
         spinner.stop();

@@ -1,11 +1,21 @@
 import chalk from "chalk";
 import boxen from "boxen";
 import { RoastReport } from "../types/index.js";
+import { renderAsciiGrade } from "./ascii-art.js";
 
 export { renderJsonReport } from "./json.js";
+export { generateBadgeSvg, saveBadge } from "./badge.js";
+export { renderAsciiGrade, getAsciiGrade } from "./ascii-art.js";
+export { renderMarkdownReport } from "./markdown.js";
 
-export function renderReport(report: RoastReport): string {
+export function renderReport(report: RoastReport, options?: { ascii?: boolean }): string {
   const sections: string[] = [];
+
+  // ASCII art grade (if enabled)
+  if (options?.ascii) {
+    sections.push(renderAsciiGrade(report.health));
+    sections.push("");
+  }
 
   // Header
   sections.push(

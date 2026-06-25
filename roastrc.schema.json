@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Roast My Codebase Configuration",
+  "description": "Configuration file for roast-my-codebase CLI",
+  "type": "object",
+  "properties": {
+    "thresholds": {
+      "description": "Customize detection thresholds",
+      "type": "object",
+      "properties": {
+        "largeFile": {
+          "description": "Line count for large file warning (default: 500)",
+          "type": "number",
+          "minimum": 1
+        },
+        "extremeFile": {
+          "description": "Line count for extreme file critical (default: 2000)",
+          "type": "number",
+          "minimum": 1
+        },
+        "highChurn": {
+          "description": "Changes in 6 months for high churn warning (default: 50)",
+          "type": "number",
+          "minimum": 1
+        },
+        "criticalChurn": {
+          "description": "Changes in 6 months for critical churn (default: 100)",
+          "type": "number",
+          "minimum": 1
+        },
+        "largePR": {
+          "description": "Files changed for large PR warning (default: 20)",
+          "type": "number",
+          "minimum": 1
+        },
+        "criticalPR": {
+          "description": "Files changed for critical PR (default: 40)",
+          "type": "number",
+          "minimum": 1
+        }
+      }
+    },
+    "scanners": {
+      "description": "Scanner control",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "description": "List of scanners to disable",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "files",
+              "todos",
+              "dependencies",
+              "circular-deps",
+              "structure",
+              "complexity",
+              "duplicates",
+              "dead-exports",
+              "type-safety",
+              "test-coverage",
+              "git-insights",
+              "security",
+              "framework"
+            ]
+          }
+        }
+      }
+    },
+    "ignore": {
+      "description": "Additional ignore patterns (added to defaults)",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "deductions": {
+      "description": "Custom health score deductions (overrides defaults)",
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "plugins": {
+      "description": "Custom scanner plugins (npm package names)",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

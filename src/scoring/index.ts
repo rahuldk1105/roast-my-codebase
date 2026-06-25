@@ -55,6 +55,27 @@ export function calculateHealth(findings: Finding[]): HealthScore {
           score += HEALTH_DEDUCTIONS.typeSafetyIssue;
         }
         break;
+      case "git-churn":
+        score += HEALTH_DEDUCTIONS.gitChurn;
+        break;
+      case "pr-size":
+        score += HEALTH_DEDUCTIONS.largePRSize;
+        break;
+      case "secrets":
+      case "env-in-git":
+        score += HEALTH_DEDUCTIONS.secret;
+        break;
+      case "eval-usage":
+        score += HEALTH_DEDUCTIONS.evalUsage;
+        break;
+      case "test-coverage":
+        score += HEALTH_DEDUCTIONS.missingTest;
+        break;
+      case "nextjs-metadata":
+      case "nextjs-client-server":
+      case "react-error-boundary":
+        score += HEALTH_DEDUCTIONS.frameworkViolation;
+        break;
     }
   }
 

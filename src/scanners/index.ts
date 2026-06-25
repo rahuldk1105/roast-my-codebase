@@ -7,3 +7,7 @@ export { ComplexityScanner } from "./complexity.js";
 export { DuplicateScanner } from "./duplicates.js";
 export { DeadExportScanner } from "./dead-exports.js";
 export { TypeSafetyScanner } from "./type-safety.js";
+export { TestCoverageScanner } from "./test-coverage.js";
+export { GitInsightsScanner } from "./git-insights.js";
+export { SecurityScanner } from "./security.js";
+export { FrameworkScanner } from "./framework.js";

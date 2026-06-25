@@ -1,0 +1,9 @@
+{
+  "$schema": "./roastrc.schema.json",
+  "scanners": {
+    "disabled": ["test-coverage"]
+  },
+  "ignore": [
+    "**/fixtures/**"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "./roastrc.schema.json",
+  "thresholds": {
+    "largeFile": 500,
+    "extremeFile": 2000,
+    "highChurn": 50,
+    "criticalChurn": 100,
+    "largePR": 20,
+    "criticalPR": 40
+  },
+  "scanners": {
+    "disabled": []
+  },
+  "ignore": [
+    "**/vendor/**",
+    "**/third-party/**"
+  ],
+  "deductions": {
+    "gitChurn": -3,
+    "secret": -10
+  },
+  "plugins": []
+}

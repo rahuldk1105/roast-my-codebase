@@ -42,4 +42,11 @@ export const HEALTH_DEDUCTIONS = {
   deadExport: -1,
   typeSafetyIssue: -2,
   criticalTypeSafety: -5,
+  gitChurn: -3,
+  largePRSize: -2,
+  secret: -10,
+  envInGit: -10,
+  evalUsage: -3,
+  missingTest: -0.5,
+  frameworkViolation: -2,
 };
