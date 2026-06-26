@@ -1,4 +1,4 @@
-import { Finding, Roast, ProjectStats, HealthScore } from "../types/index.js";
+import { Finding, Roast, HealthScore } from "../types/index.js";
 
 const largeFileRoasts = [
   "This file has achieved sentience.",
@@ -139,7 +139,7 @@ function pick<T>(arr: T[]): T {
 
 export function generateRoasts(findings: Finding[]): Roast[] {
   const roasts: Roast[] = [];
-  const seen = new Set<string>();
+  // const _seen = new Set<string>(); // Track categories we've roasted (TODO: use for deduplication)
 
   const largeFiles = findings.filter((f) => f.category === "large-files" && f.severity !== "info");
   for (const finding of largeFiles.slice(0, 3)) {

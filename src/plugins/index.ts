@@ -1,4 +1,3 @@
-import path from "path";
 import { Scanner } from "../types/index.js";
 import { RoastConfig } from "../config/index.js";
 import { isValidPluginName, validatePluginPath, sanitizeError } from "../utils/security.js";

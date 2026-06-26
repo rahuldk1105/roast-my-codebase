@@ -103,12 +103,16 @@ function extractFunctions(content: string): FunctionInfo[] {
   // Patterns to detect function declarations
   const patterns = [
     // function declarations: function name(, async function name(
+    // eslint-disable-next-line security/detect-unsafe-regex -- Bounded by file content, not user input
     /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/,
     // arrow functions assigned to variables: const name = (, let name = (, var name = (
+    // eslint-disable-next-line security/detect-unsafe-regex -- Bounded by file content, not user input
     /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/,
     // arrow functions assigned with arrow after params: const name = async (
+    // eslint-disable-next-line security/detect-unsafe-regex -- Bounded by file content, not user input
     /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>/,
     // class methods: name(, async name(, public name(, private name(, protected name(
+    // eslint-disable-next-line security/detect-unsafe-regex -- Bounded by file content, not user input
     /^\s+(?:public|private|protected|static|async|\s)*\s*(\w+)\s*\([^)]*\)\s*(?::\s*\w[^{]*)?\s*\{/,
   ];
 

@@ -45,6 +45,7 @@ export class FrameworkScanner implements Scanner {
           const content = fs.readFileSync(pagePath, "utf-8");
           const hasMetadata =
             /export\s+(const|function)\s+metadata/.test(content) ||
+            // eslint-disable-next-line security/detect-unsafe-regex -- Bounded by file content
             /export\s+(async\s+)?function\s+generateMetadata/.test(content);
 
           if (!hasMetadata) {

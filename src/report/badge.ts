@@ -1,4 +1,3 @@
-import path from "path";
 import fs from "fs";
 import chalk from "chalk";
 import { HealthScore } from "../types/index.js";

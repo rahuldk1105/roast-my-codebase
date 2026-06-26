@@ -21,12 +21,11 @@ import {
 import { calculateHealth } from "../scoring/index.js";
 import { generateRoasts, generateVerdict } from "../roasts/index.js";
 import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge } from "../report/index.js";
-import { Finding, RoastReport, Scanner, ProjectStats, HealthScore } from "../types/index.js";
+import { Finding, RoastReport, Scanner, HealthScore } from "../types/index.js";
 import { generateFixSuggestions } from "../fixes/index.js";
 import { startWatchMode, renderWatchSummary } from "../watch/index.js";
 import { compareWithBranch, renderComparison } from "../compare/index.js";
-import { loadConfig, isScannerDisabled } from "../config/index.js";
-import { loadPlugins } from "../plugins/index.js";
+import { loadConfig } from "../config/index.js";
 import { validateOutputPath, sanitizeError } from "../utils/security.js";
 
 function loadPackageVersion(): string {
@@ -77,11 +76,11 @@ export function createCli(): Command {
         process.exit(1);
       }
 
-      // Load configuration
-      const config = loadConfig(rootDir);
+      // Load configuration (currently not used but kept for future scanner filtering)
+      // const _config = loadConfig(rootDir);
 
-      // Load plugins
-      const pluginScanners = await loadPlugins(config, rootDir);
+      // Load plugins (currently not integrated into scanners array)
+      // const _pluginScanners = await loadPlugins(config, rootDir);
 
       // Define scanner function for reuse in comparison mode
       const runScanners = async (scanRootDir: string): Promise<{ findings: Finding[]; health: HealthScore }> => {
