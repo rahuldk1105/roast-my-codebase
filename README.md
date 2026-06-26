@@ -248,6 +248,76 @@ roast-my-codebase --compare main
 - Shows resolved issues
 - Score delta comparison
 
+### Historical Health Tracking
+```bash
+roast-my-codebase --track
+```
+- 📊 Track health score over time
+- 📈 See trends (improving/declining/stable)
+- 📉 Visual ASCII charts
+- 💾 Stores in `.roast-history.json` (gitignored)
+- ⏱️ Per-commit snapshots with git info
+
+**View history:**
+```bash
+roast-my-codebase --history        # Last 30 days
+roast-my-codebase --history 7      # Last 7 days
+roast-my-codebase --history 90     # Last 90 days
+```
+
+**What's tracked:**
+- Health score over time
+- Finding counts by severity
+- Category-level trends
+- Git commit information
+- Score improvement rate
+
+**Example output:**
+```
+📊 Health History Report
+
+Project: my-app
+Total snapshots: 45
+
+Current Health
+  Score: 85/100 (B)
+  Findings: 12
+  ● 2 critical  ● 6 warnings  ● 4 info
+
+Trend Analysis (Last 30 days)
+  ↗ IMPROVING (+12 points)
+
+  Statistics:
+    Average score: 78.5/100
+    Best score: 85/100
+    Worst score: 68/100
+    Improvement rate: +0.4 points/day
+
+  Score Trend
+  100 ┤
+   90 ┤      ●●
+   80 ┤    ●●  ●
+   70 ┤  ●●
+   60 ┼──────────────→
+       Jan 1    Jan 30
+
+  Category Changes
+  ↓ Improving:
+    ✓ unused-dependencies: -5 issues
+    ✓ todos: -8 issues
+  ↑ Declining:
+    ✗ complexity: +2 issues
+```
+
+**Use in CI:**
+```bash
+# Track on every commit
+roast-my-codebase --track
+
+# Fail if declining trend
+roast-my-codebase --history 7 | grep -q "DECLINING" && exit 1
+```
+
 ## Customization
 
 ### Config File (`.roastrc.json`)

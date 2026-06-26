@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import ora from "ora";
+import chalk from "chalk";
 import {
   FileScanner,
   TodoScanner,
@@ -28,6 +29,8 @@ import { compareWithBranch, renderComparison } from "../compare/index.js";
 import { loadConfig } from "../config/index.js";
 import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
+import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
+import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -57,6 +60,8 @@ export function createCli(): Command {
     .option("--fix", "Show actionable fix suggestions")
     .option("--interactive", "Interactive mode - walk through fixing issues")
     .option("--dry-run", "Preview fixes without applying them (use with --interactive)")
+    .option("--track", "Track health over time in .roast-history.json")
+    .option("--history [days]", "Show health history (default: last 30 days)", parseInt)
     .option("--watch", "Watch for file changes and re-run analysis")
     .option("--compare <branch>", "Compare current codebase with a git branch")
     .option("--badge", "Generate health badge SVG (.roast-badge.svg)")
@@ -66,7 +71,7 @@ export function createCli(): Command {
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; interactive?: boolean; dryRun?: boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
       const rootDir = path.resolve(targetPath);
 
       if (!fs.existsSync(rootDir)) {
@@ -77,6 +82,25 @@ export function createCli(): Command {
       if (!fs.statSync(rootDir).isDirectory()) {
         console.error(`Error: "${rootDir}" is not a directory.`);
         process.exit(1);
+      }
+
+      // History mode - show historical health data
+      if (options.history !== undefined) {
+        const history = loadHistory(rootDir);
+
+        if (!history) {
+          console.log(
+            chalk.yellow("\n⚠ No health history found.\n")
+          );
+          console.log(
+            chalk.dim("Run with --track flag to start tracking health over time.\n")
+          );
+          process.exit(0);
+        }
+
+        const days = typeof options.history === "number" ? options.history : 30;
+        console.log(renderHistoryReport(history, days));
+        process.exit(0);
       }
 
       // Load configuration (currently not used but kept for future scanner filtering)
@@ -318,6 +342,21 @@ export function createCli(): Command {
           verdict,
           fixes,
         };
+
+        // Track health history if requested
+        if (options.track) {
+          const snapshot = createSnapshot(health, allFindings, rootDir);
+          const history = addSnapshot(rootDir, projectName, snapshot);
+
+          console.log(chalk.green("\n✓ Health snapshot saved to .roast-history.json"));
+
+          // Show mini trend if we have enough data
+          const trendSummary = renderTrendSummary(history, 7);
+          if (trendSummary) {
+            console.log(chalk.dim("  Last 7 days: ") + trendSummary);
+          }
+          console.log();
+        }
 
         // Interactive mode
         if (options.interactive) {
