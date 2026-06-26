@@ -429,6 +429,25 @@ export default {
 
 **See [CUSTOMIZATION.md](CUSTOMIZATION.md) for plugin development guide.**
 
+## VS Code Extension
+
+Bring roast-my-codebase directly into your editor! The VS Code extension provides:
+
+- **Real-time analysis** with inline diagnostics
+- **Status bar widget** showing live health score
+- **Tree view panels** for browsing findings and stats
+- **Interactive HTML reports** in VS Code
+- **Badge generation** from the command palette
+- **Configurable** - reads `.roastrc.json` and VS Code settings
+
+### Installation
+
+1. Search for "Roast My Codebase" in VS Code Extensions marketplace
+2. Install the CLI: `npm install -g roast-my-codebase`
+3. Open any workspace and run: `Roast: Scan Workspace`
+
+See [vscode-extension/README.md](vscode-extension/README.md) for full documentation.
+
 ## Contributing
 
 PRs welcome. The architecture is modular — each scanner is independent and easy to add to.
