@@ -32,11 +32,11 @@
     "typescript",
     "health-check"
   ],
-  "author": "",
+  "author": "rahuldk <rahuldk1105@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/rahuldk1105/roast-my-codebase"
   },
   "engines": {
     "node": ">=20"
