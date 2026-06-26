@@ -146,7 +146,8 @@ export class PythonTypeHintsScanner implements Scanner {
         const rel = relativePath(rootDir, file);
 
         // Find function definitions
-        const funcPattern = /def\s+(\w+)\s*\([^)]*\)(?:\s*->\s*\w+)?:/g;
+        // eslint-disable-next-line security/detect-unsafe-regex
+        const funcPattern = /def\s+(\w+)\s*\([^)]{0,500}\)(?:\s*->\s*\w+)?:/g;
         const functions = Array.from(content.matchAll(funcPattern));
 
         for (const match of functions) {

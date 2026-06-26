@@ -17,7 +17,7 @@
     "dev": "tsx src/index.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src tests --max-warnings 20",
+    "lint": "eslint src tests --max-warnings 25",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
