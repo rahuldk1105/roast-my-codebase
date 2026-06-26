@@ -70,6 +70,12 @@ npx roast-my-codebase ./path/to/project
 # Get actionable fix suggestions
 npx roast-my-codebase --fix
 
+# Interactive mode - walk through fixing issues
+npx roast-my-codebase --interactive
+
+# Preview fixes without applying them
+npx roast-my-codebase --interactive --dry-run
+
 # Watch mode (re-run on file changes)
 npx roast-my-codebase --watch
 
@@ -186,6 +192,44 @@ roast-my-codebase --fix
 - Actionable one-liner fixes for each issue
 - Specific commands (e.g., `npm uninstall unused-package`)
 - Refactoring guidance
+
+### Interactive Mode
+```bash
+roast-my-codebase --interactive
+```
+- 🎯 Walk through issues one by one
+- 💡 See detailed explanations and fix suggestions
+- ✨ Apply automatic fixes where possible
+- ⚡ Preview changes with `--dry-run` flag
+- 🎨 Beautiful interactive UI
+
+**What can be auto-fixed:**
+- ✅ Remove unused dependencies (`npm uninstall`)
+- ✅ Add issue references to TODO comments
+- ✅ Remove dead exports
+- 🔜 More fixes coming soon!
+
+**Example session:**
+```
+🔧 Interactive Fix Mode
+
+Found 12 fixable issues.
+
+Issue 1/12 - 🔴 Critical
+─────────────────────────────────────────
+Unused dependency `lodash` is installed but never imported
+
+💡 Fix suggestion:
+  Remove unused dependency: lodash
+
+✓ This can be fixed automatically!
+
+? What would you like to do?
+❯ Apply fix automatically
+  Show details
+  Skip
+  Exit interactive mode
+```
 
 ### Watch Mode
 ```bash

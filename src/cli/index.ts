@@ -27,6 +27,7 @@ import { startWatchMode, renderWatchSummary } from "../watch/index.js";
 import { compareWithBranch, renderComparison } from "../compare/index.js";
 import { loadConfig } from "../config/index.js";
 import { validateOutputPath, sanitizeError } from "../utils/security.js";
+import { runInteractiveMode } from "../interactive/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,8 @@ export function createCli(): Command {
     .option("--markdown", "Output results as markdown")
     .option("--markdown-file", "Save markdown report to .roast-report.md")
     .option("--fix", "Show actionable fix suggestions")
+    .option("--interactive", "Interactive mode - walk through fixing issues")
+    .option("--dry-run", "Preview fixes without applying them (use with --interactive)")
     .option("--watch", "Watch for file changes and re-run analysis")
     .option("--compare <branch>", "Compare current codebase with a git branch")
     .option("--badge", "Generate health badge SVG (.roast-badge.svg)")
@@ -63,7 +66,7 @@ export function createCli(): Command {
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; interactive?: boolean; dryRun?: boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
       const rootDir = path.resolve(targetPath);
 
       if (!fs.existsSync(rootDir)) {
@@ -315,6 +318,16 @@ export function createCli(): Command {
           verdict,
           fixes,
         };
+
+        // Interactive mode
+        if (options.interactive) {
+          // Show report first
+          console.log(renderReport(report, { ascii: options.ascii }));
+
+          // Then start interactive fixing
+          await runInteractiveMode(report, rootDir, options.dryRun || false);
+          return;
+        }
 
         // Render
         if (options.json) {
