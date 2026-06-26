@@ -2,6 +2,7 @@ import chokidar from "chokidar";
 import chalk from "chalk";
 import { Scanner, Finding, HealthScore, ProjectStats } from "../types/index.js";
 import { calculateHealth } from "../scoring/index.js";
+import { debounce } from "../utils/security.js";
 
 interface WatchState {
   lastScore: number;
@@ -57,9 +58,14 @@ export async function startWatchMode(
 
   console.log(chalk.dim("\n👀 Watching for changes... (Press Ctrl+C to stop)\n"));
 
-  watcher.on("change", async (filePath) => {
+  // Debounce scan to prevent excessive calls on rapid file changes
+  const debouncedScan = debounce(async (filePath: string) => {
     console.log(chalk.dim(`\n📝 Changed: ${filePath}`));
     await runScan();
+  }, 500); // Wait 500ms after last change
+
+  watcher.on("change", (filePath) => {
+    debouncedScan(filePath);
   });
 
   // Handle cleanup

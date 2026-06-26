@@ -27,6 +27,7 @@ import { startWatchMode, renderWatchSummary } from "../watch/index.js";
 import { compareWithBranch, renderComparison } from "../compare/index.js";
 import { loadConfig, isScannerDisabled } from "../config/index.js";
 import { loadPlugins } from "../plugins/index.js";
+import { validateOutputPath, sanitizeError } from "../utils/security.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -328,10 +329,15 @@ export function createCli(): Command {
           const markdownOutput = renderMarkdownReport(report);
 
           if (options.markdownFile) {
-            // Save to file
-            const outputPath = path.join(rootDir, ".roast-report.md");
-            fs.writeFileSync(outputPath, markdownOutput, "utf-8");
-            console.log(`\n✓ Markdown report saved to ${outputPath}\n`);
+            try {
+              // Validate output path to prevent path traversal
+              const outputPath = validateOutputPath(rootDir, ".roast-report.md");
+              fs.writeFileSync(outputPath, markdownOutput, "utf-8");
+              console.log(`\n✓ Markdown report saved to ${outputPath}\n`);
+            } catch (error) {
+              console.error(`Failed to save markdown report: ${sanitizeError(error)}`);
+              process.exit(1);
+            }
           } else {
             // Print to console
             console.log(markdownOutput);
@@ -347,7 +353,21 @@ export function createCli(): Command {
         }
       } catch (error) {
         spinner.stop();
-        console.error("Analysis failed:", error);
+        console.error("Analysis failed:", sanitizeError(error));
+
+        // Log full error to debug file if DEBUG env var is set
+        if (process.env.DEBUG) {
+          try {
+            const debugPath = path.join(rootDir, ".roast-debug.log");
+            const timestamp = new Date().toISOString();
+            const errorStr = error instanceof Error ? error.stack : String(error);
+            fs.appendFileSync(debugPath, `${timestamp}: ${errorStr}\n`);
+            console.log(`Debug info saved to ${debugPath}`);
+          } catch {
+            // Ignore debug logging errors
+          }
+        }
+
         process.exit(1);
       }
     });

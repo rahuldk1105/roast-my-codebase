@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { validateConfig, safeJsonParse } from "./validation.js";
 
 export interface RoastConfig {
   // Thresholds
@@ -55,7 +56,17 @@ export function loadConfig(rootDir: string): RoastConfig {
 
   try {
     const content = fs.readFileSync(configPath, "utf-8");
-    const userConfig = JSON.parse(content);
+
+    // Safe JSON parsing to prevent prototype pollution
+    const parsed = safeJsonParse(content);
+
+    if (!parsed) {
+      console.warn("Warning: Failed to parse .roastrc.json");
+      return DEFAULT_CONFIG;
+    }
+
+    // Validate and sanitize configuration
+    const userConfig = validateConfig(parsed);
 
     // Merge with defaults
     return {
@@ -83,7 +94,7 @@ export function loadConfig(rootDir: string): RoastConfig {
       ],
     };
   } catch (error) {
-    console.warn(`Warning: Failed to parse .roastrc.json: ${error}`);
+    console.warn(`Warning: Failed to load .roastrc.json: ${error}`);
     return DEFAULT_CONFIG;
   }
 }

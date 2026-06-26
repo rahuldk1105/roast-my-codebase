@@ -1,8 +1,11 @@
 import path from "path";
 import fs from "fs";
 import { spawnSync } from "child_process";
+import { randomBytes } from "crypto";
+import { tmpdir } from "os";
 import chalk from "chalk";
 import { Finding, HealthScore } from "../types/index.js";
+import { isValidBranchName } from "../utils/security.js";
 
 export interface ComparisonResult {
   currentScore: number;
@@ -18,6 +21,13 @@ export async function compareWithBranch(
   branchName: string,
   scanFunc: (dir: string) => Promise<{ findings: Finding[]; health: HealthScore }>
 ): Promise<ComparisonResult> {
+  // Validate branch name to prevent command injection
+  if (!isValidBranchName(branchName)) {
+    throw new Error(
+      `Invalid branch name: "${branchName}". Branch names must contain only alphanumeric characters, slashes, dashes, underscores, and dots.`
+    );
+  }
+
   // Check if in a git repo
   const gitCheck = spawnSync("git", ["rev-parse", "--git-dir"], {
     cwd: rootDir,
@@ -40,9 +50,38 @@ export async function compareWithBranch(
   console.log(chalk.dim(`Scanning current working directory...`));
   const currentResult = await scanFunc(rootDir);
 
-  // Create temporary worktree for branch
-  const worktreePath = path.join(rootDir, "..", `.roast-worktree-${Date.now()}`);
+  // Create temporary worktree for branch with cryptographically secure random name
+  const randomId = randomBytes(8).toString("hex");
+  const worktreePath = path.join(tmpdir(), `.roast-worktree-${randomId}`);
   console.log(chalk.dim(`Checking out ${branchName} to temporary worktree...`));
+
+  let cleanupAttempted = false;
+
+  const cleanupWorktree = async (retries: number = 3) => {
+    if (cleanupAttempted) return;
+    cleanupAttempted = true;
+
+    for (let i = 0; i < retries; i++) {
+      const result = spawnSync("git", ["worktree", "remove", worktreePath, "--force"], {
+        cwd: rootDir,
+        stdio: "ignore",
+      });
+
+      if (result.status === 0) return;
+
+      // Wait before retry
+      await new Promise((resolve) => setTimeout(resolve, 100 * (i + 1)));
+    }
+
+    // Final fallback: manual cleanup
+    if (fs.existsSync(worktreePath)) {
+      try {
+        fs.rmSync(worktreePath, { recursive: true, force: true });
+      } catch {
+        // Ignore final cleanup errors
+      }
+    }
+  };
 
   try {
     const addWorktree = spawnSync("git", ["worktree", "add", worktreePath, branchName], {
@@ -72,7 +111,7 @@ export async function compareWithBranch(
       f => branchFindingIds.has(f.id)
     ).length;
 
-    return {
+    const result = {
       currentScore: currentResult.health.score,
       branchScore: branchResult.health.score,
       scoreDelta: currentResult.health.score - branchResult.health.score,
@@ -80,21 +119,15 @@ export async function compareWithBranch(
       resolvedFindings,
       unchangedCount,
     };
-  } finally {
-    // Cleanup worktree
-    const removeWorktree = spawnSync("git", ["worktree", "remove", worktreePath, "--force"], {
-      cwd: rootDir,
-      stdio: "ignore",
-    });
 
-    // Best effort cleanup if git worktree remove failed
-    if (removeWorktree.status !== 0 && fs.existsSync(worktreePath)) {
-      try {
-        fs.rmSync(worktreePath, { recursive: true, force: true });
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
+    // Cleanup worktree
+    await cleanupWorktree();
+
+    return result;
+  } catch (error) {
+    // Ensure cleanup on error
+    await cleanupWorktree();
+    throw error;
   }
 }
 

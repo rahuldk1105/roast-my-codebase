@@ -1,5 +1,7 @@
+import path from "path";
 import { Scanner } from "../types/index.js";
 import { RoastConfig } from "../config/index.js";
+import { isValidPluginName, validatePluginPath, sanitizeError } from "../utils/security.js";
 
 export interface PluginManifest {
   name: string;
@@ -16,6 +18,14 @@ export async function loadPlugins(
 
   for (const pluginName of plugins) {
     try {
+      // Validate plugin name to prevent path traversal and arbitrary code execution
+      if (!isValidPluginName(pluginName)) {
+        console.warn(
+          `Warning: Invalid plugin name "${pluginName}" - must match pattern @scope/roast-plugin-* or roast-plugin-*`
+        );
+        continue;
+      }
+
       // Try to load from node_modules
       const pluginModule = await loadPluginModule(pluginName, rootDir);
 
@@ -34,7 +44,7 @@ export async function loadPlugins(
 
       scanners.push(pluginModule.scanner);
     } catch (error) {
-      console.warn(`Warning: Failed to load plugin "${pluginName}": ${error}`);
+      console.warn(`Warning: Failed to load plugin "${pluginName}": ${sanitizeError(error)}`);
     }
   }
 
@@ -46,13 +56,13 @@ async function loadPluginModule(
   rootDir: string
 ): Promise<PluginManifest | null> {
   try {
-    // Try relative to root dir
-    const pluginPath = `${rootDir}/node_modules/${pluginName}`;
+    // Validate and resolve plugin path to prevent traversal
+    const pluginPath = validatePluginPath(rootDir, pluginName);
     const module = await import(pluginPath);
     return module.default || module;
   } catch {
     try {
-      // Try absolute import
+      // Try absolute import as fallback (for globally installed plugins)
       const module = await import(pluginName);
       return module.default || module;
     } catch {

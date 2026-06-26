@@ -24,12 +24,12 @@ const SECRET_PATTERNS: SecretPattern[] = [
   },
   {
     name: "Generic API Key",
-    pattern: /(api[_-]?key|apikey|secret[_-]?key)\s*[=:]\s*['"][A-Za-z0-9_-]{20,}['"]/gi,
+    pattern: /(api[_-]?key|apikey|secret[_-]?key)\s*[=:]\s*['"][A-Za-z0-9_-]{20,1000}['"]/gi,
     severity: "warning",
   },
   {
     name: "JWT Token",
-    pattern: /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+    pattern: /eyJ[A-Za-z0-9_-]{1,500}\.eyJ[A-Za-z0-9_-]{1,500}\.[A-Za-z0-9_-]{1,500}/g,
     severity: "warning",
   },
 ];
