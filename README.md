@@ -124,7 +124,7 @@ npx roast-my-codebase --markdown-file  # Save to .roast-report.md
 
 | Language | Scanners |
 |----------|----------|
-| Python | Cyclomatic complexity, type hint coverage, wildcard/deep imports |
+| Python | Cyclomatic complexity, type hints, imports, docstrings, code smells, security, class design |
 | Go | Complexity, ignored errors, panic usage, undocumented exports, init() |
 | Rust | Complexity, unsafe blocks, .unwrap() overuse, .clone() overuse, dead_code |
 | Java | Complexity, God classes, raw types, empty catches, System.out, naming |

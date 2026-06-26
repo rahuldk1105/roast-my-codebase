@@ -152,6 +152,33 @@ const pythonComplexityRoasts = [
   "This function is so complex it filed for its own ZIP code.",
 ];
 
+const pythonDocstringRoasts = [
+  "Docstrings are optional. So is understanding your code in 6 months.",
+  "Your functions are mysteries wrapped in enigmas. Add a docstring.",
+  "Self-documenting code is a myth. Your future self will thank you for docstrings.",
+];
+
+const pythonSmellRoasts = [
+  "Bare except: catching everything including your dignity.",
+  "Mutable default arguments: the gift that keeps on mutating.",
+  "This much global state makes singletons look elegant.",
+  "Your functions are nested deeper than your tech debt.",
+];
+
+const pythonSecurityRoasts = [
+  "eval() in Python: because you want hackers to feel welcome.",
+  "pickle.load() from untrusted data is just exec() with extra steps.",
+  "shell=True with user input: RCE as a feature, not a bug.",
+  "SQL string formatting: Little Bobby Tables approves.",
+  "Hardcoded secrets in Python: because .env files are too mainstream.",
+];
+
+const pythonDesignRoasts = [
+  "This class has more methods than a Swiss Army knife has tools.",
+  "A class with no methods is just a dict wearing a trench coat. Use @dataclass.",
+  "4+ parent classes: your MRO looks like a family tree from the Habsburgs.",
+];
+
 const goErrorHandlingRoasts = [
   "Ignoring errors in Go is like ignoring check engine lights.",
   "_ = dangerousOperation() — the Go equivalent of 'it's fine.'",
@@ -393,6 +420,46 @@ export async function generateRoasts(
       target: pythonImports[0].file || "Python imports",
       message: pick(pythonImportRoasts),
       category: "python-imports",
+    });
+  }
+
+  // Python docstrings
+  const pythonDocstrings = findings.filter((f) => f.category === "python-docstrings");
+  if (pythonDocstrings.length > 0) {
+    roasts.push({
+      target: "Python documentation",
+      message: pick(pythonDocstringRoasts),
+      category: "python-docstrings",
+    });
+  }
+
+  // Python code smells
+  const pythonSmells = findings.filter((f) => f.category === "python-smells");
+  if (pythonSmells.length > 0) {
+    roasts.push({
+      target: pythonSmells[0].file || "Python code",
+      message: pick(pythonSmellRoasts),
+      category: "python-smells",
+    });
+  }
+
+  // Python security
+  const pythonSecurity = findings.filter((f) => f.category === "python-security");
+  if (pythonSecurity.length > 0) {
+    roasts.push({
+      target: pythonSecurity[0].file || "Python security",
+      message: pick(pythonSecurityRoasts),
+      category: "python-security",
+    });
+  }
+
+  // Python class design
+  const pythonDesign = findings.filter((f) => f.category === "python-design");
+  if (pythonDesign.length > 0) {
+    roasts.push({
+      target: pythonDesign[0].file || "Python classes",
+      message: pick(pythonDesignRoasts),
+      category: "python-design",
     });
   }
 

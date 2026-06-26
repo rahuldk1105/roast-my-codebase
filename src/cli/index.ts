@@ -21,6 +21,10 @@ import {
   PythonComplexityScanner,
   PythonTypeHintsScanner,
   PythonImportsScanner,
+  PythonDocstringScanner,
+  PythonCodeSmellScanner,
+  PythonSecurityScanner,
+  PythonClassDesignScanner,
   GoComplexityScanner,
   GoErrorHandlingScanner,
   GoLintScanner,
@@ -361,6 +365,22 @@ export function createCli(): Command {
           const pyImportsScanner = new PythonImportsScanner();
           const pyImportsResult = await pyImportsScanner.scan(rootDir);
           allFindings.push(...pyImportsResult.findings);
+
+          spinner.text = "Checking Python docstrings...";
+          const pyDocstrings = new PythonDocstringScanner();
+          allFindings.push(...(await pyDocstrings.scan(rootDir)).findings);
+
+          spinner.text = "Detecting Python code smells...";
+          const pySmells = new PythonCodeSmellScanner();
+          allFindings.push(...(await pySmells.scan(rootDir)).findings);
+
+          spinner.text = "Scanning Python security...";
+          const pySecurity = new PythonSecurityScanner();
+          allFindings.push(...(await pySecurity.scan(rootDir)).findings);
+
+          spinner.text = "Analyzing Python class design...";
+          const pyDesign = new PythonClassDesignScanner();
+          allFindings.push(...(await pyDesign.scan(rootDir)).findings);
         }
 
         if (detectedLanguages.includes("go")) {
