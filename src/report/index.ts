@@ -7,6 +7,7 @@ export { renderJsonReport } from "./json.js";
 export { generateBadgeSvg, saveBadge } from "./badge.js";
 export { renderAsciiGrade, getAsciiGrade } from "./ascii-art.js";
 export { renderMarkdownReport } from "./markdown.js";
+export { renderHtmlReport, saveHtmlReport } from "./html.js";
 
 export function renderReport(report: RoastReport, options?: { ascii?: boolean }): string {
   const sections: string[] = [];

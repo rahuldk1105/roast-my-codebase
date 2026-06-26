@@ -51,6 +51,8 @@ import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
 import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
 import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
+import { renderHtmlReport, saveHtmlReport } from "../report/index.js";
+import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -87,12 +89,15 @@ export function createCli(): Command {
     .option("--compare <branch>", "Compare current codebase with a git branch")
     .option("--badge", "Generate health badge SVG (.roast-badge.svg)")
     .option("--ascii", "Show ASCII art grade in output")
+    .option("--html-file", "Save HTML report to .roast-report.html")
+    .option("--incremental", "Only analyze files changed since last commit (faster)")
+    .option("--since <ref>", "Only analyze files changed since git ref (e.g., main)")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string }) => {
       const rootDir = path.resolve(targetPath);
 
       if (!fs.existsSync(rootDir)) {
@@ -467,6 +472,20 @@ export function createCli(): Command {
           fixes,
         };
 
+        // Incremental mode — filter findings to changed files only
+        if (options.incremental || options.since) {
+          const incrementalResult = getChangedFiles(rootDir, options.since);
+          if (incrementalResult.isIncremental) {
+            const filteredFindings = filterFindingsByFiles(allFindings, incrementalResult.changedFiles, rootDir);
+            const changedCount = incrementalResult.changedFiles.length;
+            console.log(chalk.dim(`\n  Incremental scan: ${changedCount} changed file(s) since ${incrementalResult.baseRef}\n`));
+            report.findings = filteredFindings;
+            report.health = calculateHealth(filteredFindings);
+          } else {
+            console.log(chalk.yellow("  Not a git repo — running full scan\n"));
+          }
+        }
+
         // Track health history if requested
         if (options.track) {
           const snapshot = createSnapshot(health, allFindings, rootDir);
@@ -525,6 +544,13 @@ export function createCli(): Command {
         if (options.badge) {
           const badgeSvg = generateBadgeSvg(health);
           saveBadge(badgeSvg, rootDir);
+        }
+
+        // Save HTML report if requested
+        if (options.htmlFile) {
+          const htmlOutput = renderHtmlReport(report);
+          saveHtmlReport(htmlOutput, rootDir);
+          console.log(chalk.green(`\n✓ HTML report saved to .roast-report.html\n`));
         }
       } catch (error) {
         spinner.stop();

@@ -114,11 +114,23 @@ npx roast-my-codebase --markdown-file  # Save to .roast-report.md
 ### Fully Supported
 - **JavaScript** (.js, .jsx, .mjs, .cjs)
 - **TypeScript** (.ts, .tsx)
-- **Python** (.py) — Complexity, type hints, imports
+- **Python** (.py) — Complexity, type hints, imports, docstrings, security, class design
 - **Go** (.go) — Complexity, error handling, lint conventions
 - **Rust** (.rs) — Complexity, unsafe usage, clippy hints
 - **Java** (.java) — Complexity, code smells, naming conventions
 - **C#** (.cs) — Complexity, code smells, async patterns
+
+### Framework-Specific Checks
+
+| Framework | What's detected |
+|-----------|----------------|
+| **Next.js** | Missing metadata exports, server/client component misuse |
+| **React** | Missing error boundaries |
+| **Vue 3** | Options API in Vue 3, v-for without :key, deep watchers |
+| **Angular** | Missing OnPush strategy, direct DOM manipulation, untyped events |
+| **Svelte** | Reactive side effects, inaccessible buttons |
+| **Express** | Missing error middleware, no rate limiting, sync I/O in routes |
+| **FastAPI** | Missing response_model, sync endpoints, missing status codes |
 
 ### Language-Specific Checks
 
@@ -272,7 +284,12 @@ roast-my-codebase --interactive
 - ✅ Remove unused dependencies (`npm uninstall`)
 - ✅ Add issue references to TODO comments
 - ✅ Remove dead exports
-- 🔜 More fixes coming soon!
+- ✅ Add `'use client'` directive to Next.js components
+- ✅ Add missing metadata export to Next.js pages
+- ✅ Add `.env` files to `.gitignore`
+- ✅ Upgrade `@ts-ignore` to `@ts-expect-error`
+- ✅ Create skeleton test files for untested source files
+- ✅ Add secret files to `.gitignore`
 
 **Example session:**
 ```
@@ -296,7 +313,25 @@ Unused dependency `lodash` is installed but never imported
   Exit interactive mode
 ```
 
-### Watch Mode
+### HTML Report
+```bash
+roast-my-codebase --html-file
+```
+- Saves `.roast-report.html` — a beautiful standalone HTML report
+- Dark theme, SVG health gauge, sortable findings table, severity chart
+- Fully self-contained (no CDN, works offline)
+- Perfect for sharing with the team
+
+# Incremental Scanning
+```bash
+roast-my-codebase --incremental      # Only changed files since last commit
+roast-my-codebase --since main       # Only files changed since branching from main
+```
+- Dramatically faster on large repos — only scans changed files
+- Global findings (circular deps, excessive dependencies) are always shown
+- Falls back to full scan if not in a git repository
+
+# Watch Mode
 ```bash
 roast-my-codebase --watch
 ```

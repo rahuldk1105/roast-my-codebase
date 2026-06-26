@@ -229,6 +229,41 @@ const csharpAsyncRoasts = [
   "Sync-over-async: because who needs scalability anyway.",
 ];
 
+const vueIssuesRoasts = [
+  "Options API in Vue 3: writing Vue 2 code in a Vue 3 world.",
+  "v-for without :key — Vue is now doing the hokey pokey trying to track your list.",
+  "Deep watcher? Congratulations, you've opted into re-running everything for no reason.",
+  "This component watches everything deeply. Your CPU feels watched.",
+];
+
+const angularIssuesRoasts = [
+  "No OnPush? Angular checks this component like a paranoid security guard — constantly.",
+  "Direct DOM manipulation in Angular: ElementRef and prayers.",
+  "(event: any) — typed strictly, except when it matters.",
+  "Without OnPush, change detection runs so often it should get overtime pay.",
+];
+
+const svelteIssuesRoasts = [
+  "Reactive side effects: your $: block is doing more work than your actual functions.",
+  "A button without aria-label is just a mystery rectangle to screen readers.",
+  "Svelte is supposed to simplify things. This fetch() in $: disagrees.",
+  "Your reactive statements have more side effects than a clearance-sale medication.",
+];
+
+const expressIssuesRoasts = [
+  "No error handler in Express — every unhandled error is a coin flip with production.",
+  "No rate limiting: your API is accepting all requests, including the ones from bots.",
+  "Synchronous file I/O in a route handler: welcome to the event loop queue.",
+  "One bad request handler away from taking down the whole server.",
+];
+
+const fastapiIssuesRoasts = [
+  "Missing response_model: FastAPI's docs page is just vibes now.",
+  "Sync endpoint in FastAPI — you picked the async framework and blocked the event loop anyway.",
+  "POST without status_code: the client has to guess if it worked. Good luck.",
+  "No response_model means no validation, no docs, and no regrets — until there are regrets.",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -536,6 +571,51 @@ export async function generateRoasts(
       target: csharpAsync[0].file || "C# code",
       message: pick(csharpAsyncRoasts),
       category: "csharp-async",
+    });
+  }
+
+  const vueIssues = findings.filter((f) => f.category === "vue-issues");
+  if (vueIssues.length > 0) {
+    roasts.push({
+      target: vueIssues[0].file || "Vue code",
+      message: pick(vueIssuesRoasts),
+      category: "vue-issues",
+    });
+  }
+
+  const angularIssues = findings.filter((f) => f.category === "angular-issues");
+  if (angularIssues.length > 0) {
+    roasts.push({
+      target: angularIssues[0].file || "Angular code",
+      message: pick(angularIssuesRoasts),
+      category: "angular-issues",
+    });
+  }
+
+  const svelteIssues = findings.filter((f) => f.category === "svelte-issues");
+  if (svelteIssues.length > 0) {
+    roasts.push({
+      target: svelteIssues[0].file || "Svelte code",
+      message: pick(svelteIssuesRoasts),
+      category: "svelte-issues",
+    });
+  }
+
+  const expressIssues = findings.filter((f) => f.category === "express-issues");
+  if (expressIssues.length > 0) {
+    roasts.push({
+      target: expressIssues[0].file || "Express code",
+      message: pick(expressIssuesRoasts),
+      category: "express-issues",
+    });
+  }
+
+  const fastapiIssues = findings.filter((f) => f.category === "fastapi-issues");
+  if (fastapiIssues.length > 0) {
+    roasts.push({
+      target: fastapiIssues[0].file || "FastAPI code",
+      message: pick(fastapiIssuesRoasts),
+      category: "fastapi-issues",
     });
   }
 

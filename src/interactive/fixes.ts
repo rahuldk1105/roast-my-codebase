@@ -32,6 +32,24 @@ export async function applyAutoFix(
     case "dead-exports":
       return fixDeadExport(finding, rootDir, dryRun);
 
+    case "nextjs-client-server":
+      return fixNextjsClientServer(finding, rootDir, dryRun);
+
+    case "nextjs-metadata":
+      return fixNextjsMetadata(finding, rootDir, dryRun);
+
+    case "env-in-git":
+      return fixEnvInGit(finding, rootDir, dryRun);
+
+    case "type-safety":
+      return fixTypeSafety(finding, rootDir, dryRun);
+
+    case "test-coverage":
+      return fixTestCoverage(finding, rootDir, dryRun);
+
+    case "secrets":
+      return fixSecrets(finding, rootDir, dryRun);
+
     default:
       return {
         success: false,
@@ -231,4 +249,245 @@ function fixDeadExport(
       message: `Error fixing dead export: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
+}
+
+function fixNextjsClientServer(
+  finding: Finding,
+  rootDir: string,
+  dryRun: boolean
+): FixResult {
+  if (!finding.file) {
+    return { success: false, message: "No file specified for nextjs-client-server fix" };
+  }
+
+  const filePath = path.join(rootDir, finding.file);
+
+  try {
+    const content = fs.readFileSync(filePath, "utf-8");
+
+    if (content.includes("'use client'") || content.includes('"use client"')) {
+      return { success: false, message: `${finding.file} already has 'use client'` };
+    }
+
+    if (dryRun) {
+      return { success: true, message: `Would prepend 'use client' to ${finding.file}` };
+    }
+
+    fs.writeFileSync(filePath, `'use client';\n\n${content}`, "utf-8");
+
+    return { success: true, message: `Added 'use client' to ${finding.file}` };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error fixing nextjs-client-server: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+function fixNextjsMetadata(
+  finding: Finding,
+  rootDir: string,
+  dryRun: boolean
+): FixResult {
+  if (!finding.file) {
+    return { success: false, message: "No file specified for nextjs-metadata fix" };
+  }
+
+  const filePath = path.join(rootDir, finding.file);
+
+  try {
+    const content = fs.readFileSync(filePath, "utf-8");
+
+    if (/export.*metadata/.test(content)) {
+      return { success: false, message: `${finding.file} already exports metadata` };
+    }
+
+    const metadataExport =
+      "\nexport const metadata = {\n  title: 'Page',\n  description: 'TODO: Add description',\n};\n";
+
+    if (dryRun) {
+      return { success: true, message: `Would append metadata export to ${finding.file}` };
+    }
+
+    fs.writeFileSync(filePath, content + metadataExport, "utf-8");
+
+    return { success: true, message: `Added metadata export to ${finding.file}` };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error fixing nextjs-metadata: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+function fixGitignoreEntry(
+  rootDir: string,
+  filename: string,
+  dryRun: boolean
+): FixResult {
+  const gitignorePath = path.join(rootDir, ".gitignore");
+
+  try {
+    let existing = "";
+    if (fs.existsSync(gitignorePath)) {
+      existing = fs.readFileSync(gitignorePath, "utf-8");
+    }
+
+    const lines = existing.split("\n");
+    if (lines.some((l) => l.trim() === filename)) {
+      return { success: false, message: `${filename} is already in .gitignore` };
+    }
+
+    if (dryRun) {
+      return { success: true, message: `Would add ${filename} to .gitignore` };
+    }
+
+    const updated = existing.endsWith("\n") || existing === ""
+      ? existing + filename + "\n"
+      : existing + "\n" + filename + "\n";
+
+    fs.writeFileSync(gitignorePath, updated, "utf-8");
+
+    return { success: true, message: `Added ${filename} to .gitignore` };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error updating .gitignore: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+function fixEnvInGit(
+  finding: Finding,
+  rootDir: string,
+  dryRun: boolean
+): FixResult {
+  if (!finding.file) {
+    return { success: false, message: "No file specified for env-in-git fix" };
+  }
+
+  const filename = path.basename(finding.file);
+  const result = fixGitignoreEntry(rootDir, filename, dryRun);
+
+  if (result.success) {
+    return {
+      ...result,
+      message: `${result.message}. You must also run: git rm --cached ${finding.file}`,
+    };
+  }
+
+  return result;
+}
+
+function fixTypeSafety(
+  finding: Finding,
+  rootDir: string,
+  dryRun: boolean
+): FixResult {
+  if (!finding.message.includes("@ts-ignore")) {
+    return { success: false, message: "Auto-fix for type-safety only supports @ts-ignore findings" };
+  }
+
+  if (!finding.file) {
+    return { success: false, message: "No file specified for type-safety fix" };
+  }
+
+  const filePath = path.join(rootDir, finding.file);
+
+  try {
+    const content = fs.readFileSync(filePath, "utf-8");
+    const lines = content.split("\n");
+
+    let count = 0;
+    const newLines = lines.map((line) => {
+      if (/\/\/\s*@ts-ignore/.test(line)) {
+        count++;
+        return line.replace(/\/\/\s*@ts-ignore.*/, "// @ts-expect-error -- TODO: fix type error");
+      }
+      return line;
+    });
+
+    if (count === 0) {
+      return { success: false, message: `No @ts-ignore comments found in ${finding.file}` };
+    }
+
+    if (dryRun) {
+      return {
+        success: true,
+        message: `Would replace ${count} @ts-ignore comment(s) with @ts-expect-error in ${finding.file}`,
+      };
+    }
+
+    fs.writeFileSync(filePath, newLines.join("\n"), "utf-8");
+
+    return {
+      success: true,
+      message: `Replaced ${count} @ts-ignore comment(s) with @ts-expect-error in ${finding.file}`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error fixing type-safety: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+function fixTestCoverage(
+  finding: Finding,
+  rootDir: string,
+  dryRun: boolean
+): FixResult {
+  if (!finding.file) {
+    return { success: false, message: "No file specified for test-coverage fix" };
+  }
+
+  const srcRelative = finding.file.replace(/^src\//, "");
+  const testRelative = `tests/${srcRelative.replace(/\.tsx?$/, ".test.ts")}`;
+  const testPath = path.join(rootDir, testRelative);
+
+  if (fs.existsSync(testPath)) {
+    return { success: false, message: `Test file already exists: ${testRelative}` };
+  }
+
+  const baseName = path.basename(finding.file, path.extname(finding.file));
+  const skeleton =
+    `import { describe, it, expect } from 'vitest';\n\ndescribe('${baseName}', () => {\n  it('should work', () => {\n    // TODO: implement tests\n    expect(true).toBe(true);\n  });\n});\n`;
+
+  if (dryRun) {
+    return { success: true, message: `Would create test file: ${testRelative}` };
+  }
+
+  try {
+    fs.mkdirSync(path.dirname(testPath), { recursive: true });
+    fs.writeFileSync(testPath, skeleton, "utf-8");
+
+    return { success: true, message: `Created test file: ${testRelative}` };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Error creating test file: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+function fixSecrets(
+  finding: Finding,
+  rootDir: string,
+  dryRun: boolean
+): FixResult {
+  if (!finding.file) {
+    return { success: false, message: "No file specified for secrets fix" };
+  }
+
+  const filename = path.basename(finding.file);
+  const result = fixGitignoreEntry(rootDir, filename, dryRun);
+
+  const warning =
+    " WARNING: The secret may already be in git history — consider rotating it and running: git filter-branch or git-filter-repo";
+
+  if (result.success) {
+    return { ...result, message: result.message + warning };
+  }
+
+  return result;
 }

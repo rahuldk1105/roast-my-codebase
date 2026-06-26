@@ -74,6 +74,11 @@ export function calculateHealth(findings: Finding[]): HealthScore {
       case "nextjs-metadata":
       case "nextjs-client-server":
       case "react-error-boundary":
+      case "vue-issues":
+      case "angular-issues":
+      case "svelte-issues":
+      case "express-issues":
+      case "fastapi-issues":
         score += HEALTH_DEDUCTIONS.frameworkViolation;
         break;
     }

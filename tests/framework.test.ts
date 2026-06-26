@@ -28,12 +28,12 @@ describe("FrameworkScanner", () => {
       expect(result.stats).toEqual({ isNextJS: false, isReact: false });
     });
 
-    it("returns empty findings when not a Next.js or React project", async () => {
+    it("returns empty findings when not a supported framework project", async () => {
       fs.writeFileSync(
         path.join(tempDir, "package.json"),
         JSON.stringify({
           dependencies: {
-            express: "^4.0.0",
+            lodash: "^4.0.0",
           },
         })
       );
@@ -760,6 +760,289 @@ describe("FrameworkScanner", () => {
       const result = await scanner.scan(tempDir);
 
       expect(result.findings[0].file).toMatch(/app\/deeply\/nested\/page\.tsx/);
+    });
+  });
+
+  describe("Vue Checks", () => {
+    beforeEach(() => {
+      fs.writeFileSync(
+        path.join(tempDir, "package.json"),
+        JSON.stringify({ dependencies: { vue: "^3.0.0" } })
+      );
+    });
+
+    it("flags Options API without setup()", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "MyComponent.vue"),
+        `<template><div>Hello</div></template>
+<script>
+export default {
+  data() { return { msg: "hi" }; }
+}
+</script>`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "vue-issues" && f.id.includes("options-api"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("info");
+      expect(found[0].message).toContain("Composition API");
+    });
+
+    it("does not flag <script setup>", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "MyComponent.vue"),
+        `<template><div>Hello</div></template>
+<script setup>
+import { ref } from 'vue';
+const msg = ref('hi');
+</script>`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id.includes("options-api"));
+      expect(found).toHaveLength(0);
+    });
+
+    it("flags v-for without :key", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "List.vue"),
+        `<template>
+  <ul>
+    <li v-for="item in items">{{ item }}</li>
+  </ul>
+</template>`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "vue-issues" && f.id.includes("vfor-no-key"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("warning");
+      expect(found[0].message).toContain(":key");
+    });
+
+    it("does not flag v-for with :key", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "List.vue"),
+        `<template>
+  <ul>
+    <li v-for="item in items" :key="item.id">{{ item.name }}</li>
+  </ul>
+</template>`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id.includes("vfor-no-key"));
+      expect(found).toHaveLength(0);
+    });
+
+    it("flags deep watchers", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "Watcher.vue"),
+        `<script>
+export default {
+  watch: {
+    myObj: {
+      handler(val) { console.log(val); },
+      deep: true
+    }
+  }
+}
+</script>`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "vue-issues" && f.id.includes("deep-watcher"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("info");
+      expect(found[0].message).toContain("Deep watcher");
+    });
+  });
+
+  describe("Angular Checks", () => {
+    beforeEach(() => {
+      fs.writeFileSync(
+        path.join(tempDir, "package.json"),
+        JSON.stringify({ dependencies: { "@angular/core": "^17.0.0" } })
+      );
+    });
+
+    it("flags component missing OnPush", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "my.component.ts"),
+        `import { Component } from '@angular/core';
+
+@Component({ selector: 'app-my', template: '<div>hi</div>' })
+export class MyComponent {}
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "angular-issues" && f.id.includes("no-onpush"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("info");
+      expect(found[0].message).toContain("OnPush");
+    });
+
+    it("does not flag component with OnPush", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "fast.component.ts"),
+        `import { Component, ChangeDetectionStrategy } from '@angular/core';
+
+@Component({
+  selector: 'app-fast',
+  template: '<div>fast</div>',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class FastComponent {}
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id.includes("no-onpush"));
+      expect(found).toHaveLength(0);
+    });
+
+    it("flags direct DOM manipulation", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "dom.component.ts"),
+        `import { Component } from '@angular/core';
+
+@Component({ selector: 'app-dom', template: '<div id="box"></div>' })
+export class DomComponent {
+  ngOnInit() {
+    const el = document.getElementById('box');
+    el.style.color = 'red';
+  }
+}
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "angular-issues" && f.id.includes("direct-dom"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("warning");
+      expect(found[0].message).toContain("Renderer2");
+    });
+
+    it("flags (event: any) in component", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "event.component.ts"),
+        `import { Component } from '@angular/core';
+
+@Component({ selector: 'app-event', template: '<button (click)="handle($event)">click</button>' })
+export class EventComponent {
+  handle(event: any) { console.log(event); }
+}
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "angular-issues" && f.id.includes("event-any"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("info");
+      expect(found[0].message).toContain("Typed event handler");
+    });
+  });
+
+  describe("Express Checks", () => {
+    beforeEach(() => {
+      fs.writeFileSync(
+        path.join(tempDir, "package.json"),
+        JSON.stringify({ dependencies: { express: "^4.0.0" } })
+      );
+    });
+
+    it("flags missing error handling middleware", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "server.js"),
+        `const express = require('express');
+const app = express();
+app.get('/hello', (req, res) => res.send('hi'));
+app.listen(3000);
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id === "express-no-error-handler");
+      expect(found).toHaveLength(1);
+      expect(found[0].severity).toBe("warning");
+      expect(found[0].message).toContain("error handling middleware");
+    });
+
+    it("does not flag when error handler exists", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "server.js"),
+        `const express = require('express');
+const app = express();
+app.get('/hello', (req, res) => res.send('hi'));
+app.use((err, req, res, next) => { res.status(500).send('error'); });
+app.listen(3000);
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id === "express-no-error-handler");
+      expect(found).toHaveLength(0);
+    });
+
+    it("flags missing rate limiting", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "server.js"),
+        `const express = require('express');
+const app = express();
+app.get('/', (req, res) => res.send('ok'));
+app.use((err, req, res, next) => res.status(500).send(err.message));
+app.listen(3000);
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id === "express-no-rate-limit");
+      expect(found).toHaveLength(1);
+      expect(found[0].severity).toBe("info");
+      expect(found[0].message).toContain("rate limiting");
+    });
+
+    it("does not flag when rate limiting is present", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "server.js"),
+        `const express = require('express');
+const rateLimit = require('express-rate-limit');
+const app = express();
+const limiter = rateLimit({ windowMs: 60000, max: 100 });
+app.use(limiter);
+app.get('/', (req, res) => res.send('ok'));
+app.use((err, req, res, next) => res.status(500).send(err.message));
+app.listen(3000);
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.id === "express-no-rate-limit");
+      expect(found).toHaveLength(0);
+    });
+
+    it("flags synchronous file I/O in route handlers", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "server.js"),
+        `const express = require('express');
+const fs = require('fs');
+const app = express();
+app.get('/file', (req, res) => {
+  const data = fs.readFileSync('./data.txt', 'utf-8');
+  res.send(data);
+});
+app.use((err, req, res, next) => res.status(500).send(err.message));
+app.listen(3000);
+`
+      );
+
+      const result = await scanner.scan(tempDir);
+      const found = result.findings.filter((f) => f.category === "express-issues" && f.id.includes("sync-fs"));
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0].severity).toBe("warning");
+      expect(found[0].message).toContain("Synchronous file I/O");
     });
   });
 });
