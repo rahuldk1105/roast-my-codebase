@@ -58,6 +58,7 @@ export function createCli(): Command {
     .option("--markdown", "Output results as markdown")
     .option("--markdown-file", "Save markdown report to .roast-report.md")
     .option("--fix", "Show actionable fix suggestions")
+    .option("--ai-roasts", "Generate AI-powered contextual roasts (requires ANTHROPIC_API_KEY)")
     .option("--interactive", "Interactive mode - walk through fixing issues")
     .option("--dry-run", "Preview fixes without applying them (use with --interactive)")
     .option("--track", "Track health over time in .roast-history.json")
@@ -71,7 +72,7 @@ export function createCli(): Command {
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number }) => {
       const rootDir = path.resolve(targetPath);
 
       if (!fs.existsSync(rootDir)) {
@@ -103,8 +104,19 @@ export function createCli(): Command {
         process.exit(0);
       }
 
-      // Load configuration (currently not used but kept for future scanner filtering)
-      // const _config = loadConfig(rootDir);
+      // Load configuration
+      const config = loadConfig(rootDir);
+
+      // Build AI config from options and config file
+      const aiConfig = {
+        enabled: options.aiRoasts || config.ai?.enabled || false,
+        apiKey: config.ai?.apiKey,
+        model: config.ai?.model,
+        maxTokens: config.ai?.maxTokens,
+        temperature: config.ai?.temperature,
+        cacheEnabled: config.ai?.cacheEnabled,
+        cachePath: config.ai?.cachePath,
+      };
 
       // Load plugins (currently not integrated into scanners array)
       // const _pluginScanners = await loadPlugins(config, rootDir);
@@ -204,10 +216,10 @@ export function createCli(): Command {
         const projectName = getProjectName(rootDir);
         let isFirstRun = true;
 
-        await startWatchMode(rootDir, scanners, (findings, health, delta, stats) => {
+        await startWatchMode(rootDir, scanners, async (findings, health, delta, stats) => {
           if (isFirstRun) {
             // First run: show full report
-            const roasts = generateRoasts(findings);
+            const roasts = await generateRoasts(findings, aiConfig, rootDir);
             const verdict = generateVerdict(health);
 
             const fixes = options.fix ? generateFixSuggestions(findings) : undefined;
@@ -320,8 +332,8 @@ export function createCli(): Command {
         // Calculate health
         const health = calculateHealth(allFindings);
 
-        // Generate roasts
-        const roasts = generateRoasts(allFindings);
+        // Generate roasts (with AI if enabled)
+        const roasts = await generateRoasts(allFindings, aiConfig, rootDir);
 
         // Generate verdict
         const verdict = generateVerdict(health);

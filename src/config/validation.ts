@@ -88,6 +88,40 @@ export function validateConfig(userConfig: unknown): Partial<RoastConfig> {
     validated.plugins = config.plugins.filter((item) => typeof item === "string");
   }
 
+  // Validate AI config
+  if ("ai" in config && typeof config.ai === "object" && config.ai !== null) {
+    const ai = config.ai as Record<string, unknown>;
+    validated.ai = {};
+
+    if ("enabled" in ai && typeof ai.enabled === "boolean") {
+      validated.ai.enabled = ai.enabled;
+    }
+
+    if ("apiKey" in ai && typeof ai.apiKey === "string") {
+      validated.ai.apiKey = ai.apiKey;
+    }
+
+    if ("model" in ai && typeof ai.model === "string") {
+      validated.ai.model = ai.model;
+    }
+
+    if ("maxTokens" in ai && typeof ai.maxTokens === "number" && ai.maxTokens > 0) {
+      validated.ai.maxTokens = ai.maxTokens;
+    }
+
+    if ("temperature" in ai && typeof ai.temperature === "number" && ai.temperature >= 0 && ai.temperature <= 2) {
+      validated.ai.temperature = ai.temperature;
+    }
+
+    if ("cacheEnabled" in ai && typeof ai.cacheEnabled === "boolean") {
+      validated.ai.cacheEnabled = ai.cacheEnabled;
+    }
+
+    if ("cachePath" in ai && typeof ai.cachePath === "string") {
+      validated.ai.cachePath = ai.cachePath;
+    }
+  }
+
   return validated;
 }
 

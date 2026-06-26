@@ -1,4 +1,5 @@
 import { Finding, Roast, HealthScore } from "../types/index.js";
+import { generateAIRoastsBatch, AIRoastConfig } from "../ai/index.js";
 
 const largeFileRoasts = [
   "This file has achieved sentience.",
@@ -137,16 +138,53 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function generateRoasts(findings: Finding[]): Roast[] {
+/**
+ * Get roast message - AI if available, otherwise predefined
+ */
+function getRoastMessage(
+  finding: Finding,
+  aiRoasts: Map<string, string>,
+  fallbackArray: string[]
+): string {
+  return aiRoasts.get(finding.id) || pick(fallbackArray);
+}
+
+export async function generateRoasts(
+  findings: Finding[],
+  aiConfig?: AIRoastConfig,
+  rootDir?: string
+): Promise<Roast[]> {
   const roasts: Roast[] = [];
   // const _seen = new Set<string>(); // Track categories we've roasted (TODO: use for deduplication)
+
+  // Generate AI roasts if enabled
+  let aiRoasts = new Map<string, string>();
+  if (aiConfig?.enabled && rootDir) {
+    try {
+      // Select interesting findings for AI roasting (max 10 to control cost)
+      const interestingFindings = [
+        ...findings.filter((f) => f.severity === "critical").slice(0, 3),
+        ...findings.filter((f) => f.severity === "warning").slice(0, 4),
+        ...findings.filter((f) => f.severity === "info").slice(0, 3),
+      ].slice(0, 10);
+
+      aiRoasts = await generateAIRoastsBatch(
+        interestingFindings,
+        aiConfig,
+        rootDir
+      );
+    } catch (error) {
+      console.warn("Warning: AI roast generation failed, using predefined roasts");
+    }
+  }
 
   const largeFiles = findings.filter((f) => f.category === "large-files" && f.severity !== "info");
   for (const finding of largeFiles.slice(0, 3)) {
     if (!finding.file) continue;
+    const aiRoast = aiRoasts.get(finding.id);
     roasts.push({
       target: finding.file,
-      message: pick(largeFileRoasts),
+      message: aiRoast || pick(largeFileRoasts),
       category: "large-files",
     });
   }

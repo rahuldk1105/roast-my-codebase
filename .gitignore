@@ -4,3 +4,4 @@ dist/
 .DS_Store
 .roast-history.json
 .roast-debug.log
+.roast-ai-cache.json

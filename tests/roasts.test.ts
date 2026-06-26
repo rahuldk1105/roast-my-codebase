@@ -3,7 +3,7 @@ import { generateRoasts, generateVerdict } from "../src/roasts/index.js";
 import { Finding, HealthScore } from "../src/types/index.js";
 
 describe("generateRoasts", () => {
-  it("generates roasts for large files", () => {
+  it("generates roasts for large files", async () => {
     const findings: Finding[] = [
       {
         id: "large-file-big.ts",
@@ -13,7 +13,7 @@ describe("generateRoasts", () => {
         file: "src/big.ts",
       },
     ];
-    const roasts = generateRoasts(findings);
+    const roasts = await generateRoasts(findings);
 
     expect(roasts.length).toBeGreaterThan(0);
     const largeFileRoast = roasts.find((r) => r.category === "large-files");
@@ -22,7 +22,7 @@ describe("generateRoasts", () => {
     expect(largeFileRoast!.message.length).toBeGreaterThan(0);
   });
 
-  it("generates roasts for TODOs", () => {
+  it("generates roasts for TODOs", async () => {
     const findings: Finding[] = [
       {
         id: "todo-count",
@@ -31,14 +31,14 @@ describe("generateRoasts", () => {
         message: "Found 10 comment markers",
       },
     ];
-    const roasts = generateRoasts(findings);
+    const roasts = await generateRoasts(findings);
 
     const todoRoast = roasts.find((r) => r.category === "todos");
     expect(todoRoast).toBeDefined();
     expect(todoRoast!.target).toBe("TODOs");
   });
 
-  it("generates roasts for unused deps", () => {
+  it("generates roasts for unused deps", async () => {
     const findings: Finding[] = [
       {
         id: "unused-dep-moment",
@@ -48,13 +48,13 @@ describe("generateRoasts", () => {
         detail: "moment",
       },
     ];
-    const roasts = generateRoasts(findings);
+    const roasts = await generateRoasts(findings);
 
     const depRoast = roasts.find((r) => r.category === "dependencies");
     expect(depRoast).toBeDefined();
   });
 
-  it("generates roasts for circular deps", () => {
+  it("generates roasts for circular deps", async () => {
     const findings: Finding[] = [
       {
         id: "circular-auth",
@@ -64,13 +64,13 @@ describe("generateRoasts", () => {
         file: "src/auth.ts",
       },
     ];
-    const roasts = generateRoasts(findings);
+    const roasts = await generateRoasts(findings);
 
     const circRoast = roasts.find((r) => r.category === "circular-deps");
     expect(circRoast).toBeDefined();
   });
 
-  it("generates roasts for structure issues", () => {
+  it("generates roasts for structure issues", async () => {
     const findings: Finding[] = [
       {
         id: "deep-nesting",
@@ -80,19 +80,19 @@ describe("generateRoasts", () => {
         file: "src/deep/path",
       },
     ];
-    const roasts = generateRoasts(findings);
+    const roasts = await generateRoasts(findings);
 
     const structRoast = roasts.find((r) => r.category === "structure");
     expect(structRoast).toBeDefined();
   });
 
-  it("returns empty array when no roastable findings", () => {
-    const roasts = generateRoasts([]);
+  it("returns empty array when no roastable findings", async () => {
+    const roasts = await generateRoasts([]);
 
     expect(roasts).toEqual([]);
   });
 
-  it("does not roast info-severity large files", () => {
+  it("does not roast info-severity large files", async () => {
     const findings: Finding[] = [
       {
         id: "large-file-warn-small.ts",
@@ -102,7 +102,7 @@ describe("generateRoasts", () => {
         file: "src/small.ts",
       },
     ];
-    const roasts = generateRoasts(findings);
+    const roasts = await generateRoasts(findings);
 
     const largeFileRoast = roasts.find((r) => r.category === "large-files");
     expect(largeFileRoast).toBeUndefined();

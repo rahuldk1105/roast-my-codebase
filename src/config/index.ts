@@ -28,6 +28,17 @@ export interface RoastConfig {
 
   // Plugin packages (npm package names)
   plugins?: string[];
+
+  // AI roast generation
+  ai?: {
+    enabled?: boolean;
+    apiKey?: string;
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+    cacheEnabled?: boolean;
+    cachePath?: string;
+  };
 }
 
 const DEFAULT_CONFIG: RoastConfig = {
