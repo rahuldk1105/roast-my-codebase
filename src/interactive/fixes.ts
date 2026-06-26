@@ -5,18 +5,11 @@
 import fs from "fs";
 import path from "path";
 import { spawnSync } from "child_process";
-import { Finding } from "../types/index.js";
+import { Finding, FixSuggestion } from "../types/index.js";
 
 export interface FixResult {
   success: boolean;
   message: string;
-}
-
-export interface FixSuggestion {
-  findingId: string;
-  suggestion: string;
-  autoFixable: boolean;
-  command?: string;
 }
 
 /**

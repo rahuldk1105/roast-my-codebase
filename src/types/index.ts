@@ -35,8 +35,11 @@ export interface HealthScore {
 }
 
 export interface FixSuggestion {
+  findingId: string;
   finding: Finding;
   suggestion: string;
+  autoFixable: boolean;
+  command?: string;
 }
 
 export interface RoastReport {
