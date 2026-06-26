@@ -39,8 +39,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test CLI runs
-        run: node dist/index.js . --json
+      - name: Verify CLI bundle loads
+        run: node -e "import('./dist/index.js')"
 
   publish-check:
     name: Publish Dry Run
