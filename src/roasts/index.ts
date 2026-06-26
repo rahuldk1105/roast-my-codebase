@@ -152,6 +152,56 @@ const pythonComplexityRoasts = [
   "This function is so complex it filed for its own ZIP code.",
 ];
 
+const goErrorHandlingRoasts = [
+  "Ignoring errors in Go is like ignoring check engine lights.",
+  "_ = dangerousOperation() — the Go equivalent of 'it's fine.'",
+  "Your error handling strategy appears to be 'hope.'",
+  "panic() in production: because graceful degradation is overrated.",
+];
+
+const goLintRoasts = [
+  "Unexported symbols don't need docs. Exported ones do. Guess which you forgot.",
+  "Multiple init() functions: because one confusing startup sequence wasn't enough.",
+  "Go proverbs say 'a little copying is better than a little dependency.' You took that personally.",
+];
+
+const rustUnsafeRoasts = [
+  "unsafe {} — Rust's way of saying 'I know what I'm doing.' Do you, though?",
+  "This much unsafe code defeats the purpose of choosing Rust.",
+  "The borrow checker can't save you if you keep bypassing it.",
+];
+
+const rustClippyRoasts = [
+  ".unwrap() everywhere: living dangerously, one None at a time.",
+  "This much .clone() suggests a fundamental misunderstanding of ownership.",
+  "todo!() in production: the Rust equivalent of 'I'll fix it later.'",
+];
+
+const javaSmellRoasts = [
+  "This class has more methods than a phone book has entries.",
+  "System.out.println in production — logging frameworks exist, you know.",
+  "Empty catch blocks: because exceptions are just suggestions.",
+  "God classes: when Single Responsibility Principle is just a suggestion.",
+];
+
+const javaNamingRoasts = [
+  "AbstractSingletonProxyFactoryBean called. It wants its naming convention back.",
+  "Java naming conventions aren't optional. Even Java thinks so.",
+  "Your constant naming is more chaotic than your class hierarchy.",
+];
+
+const csharpSmellRoasts = [
+  "#region is not architecture. It's a rug to sweep complexity under.",
+  "Console.WriteLine in production? ILogger is right there.",
+  "This class is so large it needs its own table of contents.",
+];
+
+const csharpAsyncRoasts = [
+  "async void: the fire-and-forget-and-pray pattern.",
+  ".Result and .Wait() — deadlocks as a service.",
+  "Sync-over-async: because who needs scalability anyway.",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -346,7 +396,81 @@ export async function generateRoasts(
     });
   }
 
-  // Note: Python complexity roasts are covered by the general complexity roasts above
+  // Go-specific roasts
+  const goErrors = findings.filter((f) => f.category === "go-error-handling");
+  if (goErrors.length > 0) {
+    roasts.push({
+      target: goErrors[0].file || "Go code",
+      message: pick(goErrorHandlingRoasts),
+      category: "go-error-handling",
+    });
+  }
+
+  const goLint = findings.filter((f) => f.category === "go-lint");
+  if (goLint.length > 0) {
+    roasts.push({
+      target: "Go conventions",
+      message: pick(goLintRoasts),
+      category: "go-lint",
+    });
+  }
+
+  // Rust-specific roasts
+  const rustUnsafe = findings.filter((f) => f.category === "rust-unsafe");
+  if (rustUnsafe.length > 0) {
+    roasts.push({
+      target: rustUnsafe[0].file || "Rust code",
+      message: pick(rustUnsafeRoasts),
+      category: "rust-unsafe",
+    });
+  }
+
+  const rustClippy = findings.filter((f) => f.category === "rust-clippy");
+  if (rustClippy.length > 0) {
+    roasts.push({
+      target: rustClippy[0].file || "Rust code",
+      message: pick(rustClippyRoasts),
+      category: "rust-clippy",
+    });
+  }
+
+  // Java-specific roasts
+  const javaSmells = findings.filter((f) => f.category === "java-smells");
+  if (javaSmells.length > 0) {
+    roasts.push({
+      target: javaSmells[0].file || "Java code",
+      message: pick(javaSmellRoasts),
+      category: "java-smells",
+    });
+  }
+
+  const javaNaming = findings.filter((f) => f.category === "java-naming");
+  if (javaNaming.length > 0) {
+    roasts.push({
+      target: javaNaming[0].file || "Java code",
+      message: pick(javaNamingRoasts),
+      category: "java-naming",
+    });
+  }
+
+  // C#-specific roasts
+  const csharpSmells = findings.filter((f) => f.category === "csharp-smells");
+  if (csharpSmells.length > 0) {
+    roasts.push({
+      target: csharpSmells[0].file || "C# code",
+      message: pick(csharpSmellRoasts),
+      category: "csharp-smells",
+    });
+  }
+
+  const csharpAsync = findings.filter((f) => f.category === "csharp-async");
+  if (csharpAsync.length > 0) {
+    roasts.push({
+      target: csharpAsync[0].file || "C# code",
+      message: pick(csharpAsyncRoasts),
+      category: "csharp-async",
+    });
+  }
 
   return roasts;
 }

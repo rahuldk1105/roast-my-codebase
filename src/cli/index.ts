@@ -21,6 +21,18 @@ import {
   PythonComplexityScanner,
   PythonTypeHintsScanner,
   PythonImportsScanner,
+  GoComplexityScanner,
+  GoErrorHandlingScanner,
+  GoLintScanner,
+  RustComplexityScanner,
+  RustUnsafeScanner,
+  RustClippyHintsScanner,
+  JavaComplexityScanner,
+  JavaCodeSmellScanner,
+  JavaNamingScanner,
+  CSharpComplexityScanner,
+  CSharpCodeSmellScanner,
+  CSharpAsyncScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -349,6 +361,62 @@ export function createCli(): Command {
           const pyImportsScanner = new PythonImportsScanner();
           const pyImportsResult = await pyImportsScanner.scan(rootDir);
           allFindings.push(...pyImportsResult.findings);
+        }
+
+        if (detectedLanguages.includes("go")) {
+          spinner.text = "Analyzing Go complexity...";
+          const goComplexity = new GoComplexityScanner();
+          allFindings.push(...(await goComplexity.scan(rootDir)).findings);
+
+          spinner.text = "Checking Go error handling...";
+          const goErrors = new GoErrorHandlingScanner();
+          allFindings.push(...(await goErrors.scan(rootDir)).findings);
+
+          spinner.text = "Checking Go conventions...";
+          const goLint = new GoLintScanner();
+          allFindings.push(...(await goLint.scan(rootDir)).findings);
+        }
+
+        if (detectedLanguages.includes("rust")) {
+          spinner.text = "Analyzing Rust complexity...";
+          const rustComplexity = new RustComplexityScanner();
+          allFindings.push(...(await rustComplexity.scan(rootDir)).findings);
+
+          spinner.text = "Checking Rust unsafe usage...";
+          const rustUnsafe = new RustUnsafeScanner();
+          allFindings.push(...(await rustUnsafe.scan(rootDir)).findings);
+
+          spinner.text = "Running Rust clippy hints...";
+          const rustClippy = new RustClippyHintsScanner();
+          allFindings.push(...(await rustClippy.scan(rootDir)).findings);
+        }
+
+        if (detectedLanguages.includes("java")) {
+          spinner.text = "Analyzing Java complexity...";
+          const javaComplexity = new JavaComplexityScanner();
+          allFindings.push(...(await javaComplexity.scan(rootDir)).findings);
+
+          spinner.text = "Checking Java code smells...";
+          const javaSmells = new JavaCodeSmellScanner();
+          allFindings.push(...(await javaSmells.scan(rootDir)).findings);
+
+          spinner.text = "Checking Java naming conventions...";
+          const javaNaming = new JavaNamingScanner();
+          allFindings.push(...(await javaNaming.scan(rootDir)).findings);
+        }
+
+        if (detectedLanguages.includes("csharp")) {
+          spinner.text = "Analyzing C# complexity...";
+          const csharpComplexity = new CSharpComplexityScanner();
+          allFindings.push(...(await csharpComplexity.scan(rootDir)).findings);
+
+          spinner.text = "Checking C# code smells...";
+          const csharpSmells = new CSharpCodeSmellScanner();
+          allFindings.push(...(await csharpSmells.scan(rootDir)).findings);
+
+          spinner.text = "Checking C# async patterns...";
+          const csharpAsync = new CSharpAsyncScanner();
+          allFindings.push(...(await csharpAsync.scan(rootDir)).findings);
         }
 
         spinner.stop();

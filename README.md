@@ -114,24 +114,31 @@ npx roast-my-codebase --markdown-file  # Save to .roast-report.md
 ### Fully Supported
 - **JavaScript** (.js, .jsx, .mjs, .cjs)
 - **TypeScript** (.ts, .tsx)
-- **Python** (.py) - NEW! ✨
-  - Complexity analysis
-  - Type hints detection
-  - Import pattern analysis
+- **Python** (.py) — Complexity, type hints, imports
+- **Go** (.go) — Complexity, error handling, lint conventions
+- **Rust** (.rs) — Complexity, unsafe usage, clippy hints
+- **Java** (.java) — Complexity, code smells, naming conventions
+- **C#** (.cs) — Complexity, code smells, async patterns
+
+### Language-Specific Checks
+
+| Language | Scanners |
+|----------|----------|
+| Python | Cyclomatic complexity, type hint coverage, wildcard/deep imports |
+| Go | Complexity, ignored errors, panic usage, undocumented exports, init() |
+| Rust | Complexity, unsafe blocks, .unwrap() overuse, .clone() overuse, dead_code |
+| Java | Complexity, God classes, raw types, empty catches, System.out, naming |
+| C# | Complexity, God classes, #regions, async void, sync-over-async, empty catches |
 
 ### Universal Features (All Languages)
 - File size analysis
 - TODO/FIXME detection
-- Git insights
-- Security scans
+- Git insights (churn, PR size, stale branches)
+- Security scans (secrets, .env in git, eval)
+- Test coverage gaps
+- Framework best practices (Next.js, React)
 
-### Coming Soon
-- Go (.go)
-- Rust (.rs)
-- Java (.java)
-- C# (.cs)
-
-Language detection is automatic! The tool detects your project's languages and runs appropriate scanners.
+Language detection is automatic! The tool detects your project's languages via package files and runs appropriate scanners.
 
 ## Design principles
 

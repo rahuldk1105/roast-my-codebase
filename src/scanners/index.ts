@@ -12,3 +12,7 @@ export { GitInsightsScanner } from "./git-insights.js";
 export { SecurityScanner } from "./security.js";
 export { FrameworkScanner } from "./framework.js";
 export { PythonComplexityScanner, PythonTypeHintsScanner, PythonImportsScanner } from "./python.js";
+export { GoComplexityScanner, GoErrorHandlingScanner, GoLintScanner } from "./go.js";
+export { RustComplexityScanner, RustUnsafeScanner, RustClippyHintsScanner } from "./rust.js";
+export { JavaComplexityScanner, JavaCodeSmellScanner, JavaNamingScanner } from "./java.js";
+export { CSharpComplexityScanner, CSharpCodeSmellScanner, CSharpAsyncScanner } from "./csharp.js";
