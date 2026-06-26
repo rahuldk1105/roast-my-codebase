@@ -198,7 +198,7 @@ describe("Historical Health Tracking", () => {
         projectName: "test",
         snapshots: [
           {
-            timestamp: now - 30 * 24 * 60 * 60 * 1000,
+            timestamp: now - 29 * 24 * 60 * 60 * 1000,
             date: "",
             score: 70,
             grade: "C",
@@ -236,7 +236,7 @@ describe("Historical Health Tracking", () => {
         projectName: "test",
         snapshots: [
           {
-            timestamp: now - 30 * 24 * 60 * 60 * 1000,
+            timestamp: now - 29 * 24 * 60 * 60 * 1000,
             date: "",
             score: 85,
             grade: "B",
