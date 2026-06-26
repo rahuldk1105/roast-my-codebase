@@ -109,14 +109,29 @@ npx roast-my-codebase --markdown-file  # Save to .roast-report.md
 | **Dead Exports** | Exports that are never imported |
 | **Type Safety** | `any` usage, `@ts-ignore`, type bypasses |
 
-## Supported projects
+## Supported Languages
 
-Works on any JavaScript/TypeScript project:
+### Fully Supported
+- **JavaScript** (.js, .jsx, .mjs, .cjs)
+- **TypeScript** (.ts, .tsx)
+- **Python** (.py) - NEW! ✨
+  - Complexity analysis
+  - Type hints detection
+  - Import pattern analysis
 
-- React, Next.js, Vue, Svelte
-- Express, NestJS, Fastify
-- Node.js, Vite, Webpack
-- No configuration required
+### Universal Features (All Languages)
+- File size analysis
+- TODO/FIXME detection
+- Git insights
+- Security scans
+
+### Coming Soon
+- Go (.go)
+- Rust (.rs)
+- Java (.java)
+- C# (.cs)
+
+Language detection is automatic! The tool detects your project's languages and runs appropriate scanners.
 
 ## Design principles
 

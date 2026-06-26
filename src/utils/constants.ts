@@ -5,6 +5,11 @@ export const SOURCE_EXTENSIONS = [
   ".jsx",
   ".mjs",
   ".cjs",
+  ".py",      // Python
+  ".go",      // Go
+  ".rs",      // Rust
+  ".java",    // Java
+  ".cs",      // C#
 ];
 
 export const IGNORE_PATTERNS = [

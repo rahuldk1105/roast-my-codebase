@@ -134,6 +134,24 @@ const verdicts = {
   ],
 };
 
+const pythonTypeHintsRoasts = [
+  "Type hints are optional in Python. So are brakes on a car, technically.",
+  "Dynamic typing is great until your production server discovers the wrong type at 3 AM.",
+  "Type hints: because debugging at runtime is what keeps us young.",
+];
+
+const pythonImportRoasts = [
+  "Wildcard imports: because you like playing 'guess which namespace that came from.'",
+  "Deep relative imports: your codebase is spaghetti that imports other spaghetti.",
+  "from module import * — the programming equivalent of 'throw everything in and hope.'",
+];
+
+const pythonComplexityRoasts = [
+  "This Python function has more branches than a bank.",
+  "Cyclomatic complexity this high should come with a map.",
+  "This function is so complex it filed for its own ZIP code.",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -308,6 +326,27 @@ export async function generateRoasts(
       category: "framework",
     });
   }
+
+  // Python-specific roasts
+  const pythonTypeHints = findings.filter((f) => f.category === "type-safety" && f.message.includes("Python"));
+  if (pythonTypeHints.length > 0) {
+    roasts.push({
+      target: "Python code",
+      message: pick(pythonTypeHintsRoasts),
+      category: "type-safety",
+    });
+  }
+
+  const pythonImports = findings.filter((f) => f.category === "python-imports");
+  if (pythonImports.length > 0) {
+    roasts.push({
+      target: pythonImports[0].file || "Python imports",
+      message: pick(pythonImportRoasts),
+      category: "python-imports",
+    });
+  }
+
+  // Note: Python complexity roasts are covered by the general complexity roasts above
 
   return roasts;
 }

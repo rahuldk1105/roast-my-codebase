@@ -11,3 +11,4 @@ export { TestCoverageScanner } from "./test-coverage.js";
 export { GitInsightsScanner } from "./git-insights.js";
 export { SecurityScanner } from "./security.js";
 export { FrameworkScanner } from "./framework.js";
+export { PythonComplexityScanner, PythonTypeHintsScanner, PythonImportsScanner } from "./python.js";

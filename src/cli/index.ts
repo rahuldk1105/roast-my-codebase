@@ -18,7 +18,11 @@ import {
   GitInsightsScanner,
   SecurityScanner,
   FrameworkScanner,
+  PythonComplexityScanner,
+  PythonTypeHintsScanner,
+  PythonImportsScanner,
 } from "../scanners/index.js";
+import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
 import { generateRoasts, generateVerdict } from "../roasts/index.js";
 import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge } from "../report/index.js";
@@ -326,6 +330,26 @@ export function createCli(): Command {
         const frameworkScanner = new FrameworkScanner();
         const frameworkResult = await frameworkScanner.scan(rootDir);
         allFindings.push(...frameworkResult.findings);
+
+        // Language-specific scanners
+        const detectedLanguages = detectProjectLanguage(rootDir, fs);
+
+        if (detectedLanguages.includes("python")) {
+          spinner.text = "Analyzing Python complexity...";
+          const pyComplexityScanner = new PythonComplexityScanner();
+          const pyComplexityResult = await pyComplexityScanner.scan(rootDir);
+          allFindings.push(...pyComplexityResult.findings);
+
+          spinner.text = "Checking Python type hints...";
+          const pyTypeHintsScanner = new PythonTypeHintsScanner();
+          const pyTypeHintsResult = await pyTypeHintsScanner.scan(rootDir);
+          allFindings.push(...pyTypeHintsResult.findings);
+
+          spinner.text = "Analyzing Python imports...";
+          const pyImportsScanner = new PythonImportsScanner();
+          const pyImportsResult = await pyImportsScanner.scan(rootDir);
+          allFindings.push(...pyImportsResult.findings);
+        }
 
         spinner.stop();
 
