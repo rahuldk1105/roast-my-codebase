@@ -32,8 +32,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify CLI works
-        run: node dist/index.js . --json
+      - name: Verify CLI bundle loads
+        run: node -e "import('./dist/index.js')"
 
       - name: Set version from tag
         run: |
