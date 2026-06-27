@@ -216,8 +216,18 @@ export class DatabaseScanner implements Scanner {
     }
 
     // 3. sync({ force: true })
+    // Check line-by-line to avoid matching inside comments
     // eslint-disable-next-line security/detect-unsafe-regex
-    if (/sync\s*\(\s*\{[^}]*force\s*:\s*true/.test(content)) {
+    const syncForceRe = /sync\s*\(\s*\{[^}]*force\s*:\s*true/;
+    const hasDestructiveSync = lines.some((line) => {
+      const trimmed = line.trimStart();
+      // Skip single-line comments
+      if (trimmed.startsWith("//")) return false;
+      // Strip trailing inline comments before testing
+      const codeOnly = trimmed.replace(/\/\/.*$/, "");
+      return syncForceRe.test(codeOnly);
+    });
+    if (hasDestructiveSync) {
       findings.push({
         id: `db-destructive-${rel}`,
         severity: "critical",

@@ -114,7 +114,26 @@ export class LicenseScanner implements Scanner {
 
 export function normalizeLicense(raw: unknown): string {
   if (!raw) return 'UNKNOWN';
-  if (typeof raw === 'string') return raw.trim().toUpperCase().replace(/\s+/g, '-');
+  if (typeof raw === 'string') {
+    // Split on SPDX OR/AND operators first, normalize each identifier token
+    // (uppercase + collapse spaces to dashes), then rejoin with the operator.
+    // E.g. "GPL-2.0-or-later OR MIT" → "GPL-2.0-OR-LATER OR MIT"
+    // so that isRestrictive() can split on the preserved OR keyword.
+    const upper = raw.trim().toUpperCase();
+    // Split captures the operator keywords (OR/AND) as alternating elements
+    const parts = upper.split(/\s+(OR|AND)\s+/);
+    // parts = ['GPL-2.0-OR-LATER', 'OR', 'MIT'] for the example above
+    return parts
+      .map((part, idx) => {
+        if (idx % 2 === 1) {
+          // This is an operator captured by the split regex — keep as-is
+          return part;
+        }
+        // Identifier token — collapse remaining spaces to dashes
+        return part.replace(/\s+/g, '-');
+      })
+      .join(' ');
+  }
   // Handle { type: 'MIT' } or array [{ type: 'MIT' }]
   if (Array.isArray(raw)) return raw.map(l => normalizeLicense(l)).join(' OR ');
   if (typeof raw === 'object' && raw !== null) {

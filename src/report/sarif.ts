@@ -59,6 +59,11 @@ function buildRules(findings: Finding[]) {
   return rules;
 }
 
+function toSarifUri(filePath: string): string {
+  // SARIF URIs must use forward slashes (POSIX path separators)
+  return filePath.replace(/\\/g, '/');
+}
+
 function buildResults(findings: Finding[]) {
   return findings.map((finding) => {
     const result: Record<string, unknown> = {
@@ -72,7 +77,7 @@ function buildResults(findings: Finding[]) {
         {
           physicalLocation: {
             artifactLocation: {
-              uri: finding.file,
+              uri: toSarifUri(finding.file),
               uriBaseId: "%SRCROOT%",
             },
             region: {
@@ -108,7 +113,7 @@ function buildArtifacts(findings: Finding[]) {
 
     artifacts.push({
       location: {
-        uri: finding.file,
+        uri: toSarifUri(finding.file),
         uriBaseId: "%SRCROOT%",
       },
     });

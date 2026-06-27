@@ -307,6 +307,23 @@ describe("ConfigAuditScanner", () => {
       expect(finding?.message).toContain("@typescript-eslint");
     });
 
+    it("does not falsely flag 'no extends' when extends is a string (not array)", async () => {
+      // Some eslintrc configs use extends as a string, not an array
+      fs.writeFileSync(
+        path.join(tmpDir, ".eslintrc.json"),
+        JSON.stringify({
+          extends: "eslint:recommended",
+          rules: { "no-console": "warn", "no-unused-vars": "error" },
+        })
+      );
+
+      const scanner = new ConfigAuditScanner();
+      const result = await scanner.scan(tmpDir);
+
+      const finding = result.findings.find((f) => f.id === "config-eslint-no-extends");
+      expect(finding).toBeUndefined();
+    });
+
     it("does not emit @typescript-eslint warning when no tsconfig exists", async () => {
       fs.writeFileSync(
         path.join(tmpDir, ".eslintrc.json"),

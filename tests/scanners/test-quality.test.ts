@@ -251,4 +251,67 @@ describe("TestQualityScanner", () => {
 
     expect(result.findings).toHaveLength(0);
   });
+
+  // --- Edge cases: comment-matching false positives ---
+
+  it("does NOT count it.skip inside a comment as a skipped test", async () => {
+    const commented = `
+import { describe, it, expect } from 'vitest';
+describe('suite', () => {
+  // it.skip('was disabled for some reason', () => {});
+  it('real test', () => {
+    expect(1 + 1).toBe(2);
+  });
+  it('real test 2', () => {
+    expect(2 + 2).toBe(4);
+  });
+  it('real test 3', () => {
+    expect(3 + 3).toBe(6);
+  });
+  it('real test 4', () => {
+    expect(4 + 4).toBe(8);
+  });
+});
+`;
+    writeTestFile(tmpDir, "comment-skip.test.ts", commented);
+    const result = await scanner.scan(tmpDir);
+    const stats = result.stats as { skippedTests: number };
+    // The commented-out it.skip should not be counted
+    expect(stats.skippedTests).toBe(0);
+    // No project-level skipped finding should trigger
+    const skippedFinding = result.findings.find((f) => f.id === "test-quality-skipped");
+    expect(skippedFinding).toBeUndefined();
+  });
+
+  it("does NOT flag expect(true).toBe(true) inside a comment as always-true", async () => {
+    const commented = `
+import { describe, it, expect } from 'vitest';
+describe('suite', () => {
+  it('real test', () => {
+    // expect(true).toBe(true); // old assertion removed
+    expect(1 + 1).toBe(2);
+  });
+});
+`;
+    writeTestFile(tmpDir, "comment-assert.test.ts", commented);
+    const result = await scanner.scan(tmpDir);
+    const alwaysTrue = result.findings.find((f) => f.id.includes("always-true"));
+    expect(alwaysTrue).toBeUndefined();
+  });
+
+  it("detects describe.only as a focused test (not just it.only)", async () => {
+    const describeOnly = `
+import { describe, it, expect } from 'vitest';
+describe.only('focused suite', () => {
+  it('test 1', () => { expect(1).toBe(1); });
+});
+`;
+    writeTestFile(tmpDir, "describe-only.test.ts", describeOnly);
+    const result = await scanner.scan(tmpDir);
+    const stats = result.stats as { focusedTests: number };
+    expect(stats.focusedTests).toBeGreaterThan(0);
+    const onlyFinding = result.findings.find((f) => f.id.includes("only"));
+    expect(onlyFinding).toBeDefined();
+    expect(onlyFinding!.severity).toBe("critical");
+  });
 });

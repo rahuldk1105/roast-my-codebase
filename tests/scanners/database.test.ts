@@ -302,4 +302,74 @@ const result = await prisma.$queryRaw('SELECT * FROM users WHERE id = ' + userId
     );
     expect(sqlInjection.length).toBeGreaterThan(0);
   });
+
+  // --- Edge case: sync({ force: true }) inside a comment must NOT trigger ---
+  it("does NOT flag sync({ force: true }) that appears only in a comment", async () => {
+    const dir = makeTempDir();
+    fs.writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({ name: "test", dependencies: { sequelize: "^6.0.0" } })
+    );
+    fs.writeFileSync(
+      path.join(dir, "app.ts"),
+      `
+import { Sequelize } from 'sequelize';
+const sequelize = new Sequelize('sqlite::memory:');
+// WARNING: don't use sync({ force: true }) in production!
+sequelize.sync();
+`
+    );
+    const result = await scanner.scan(dir);
+    const destructive = result.findings.filter((f) => f.category === "db-destructive");
+    expect(destructive).toHaveLength(0);
+  });
+
+  // --- Edge case: $queryRaw with backtick template literal must NOT trigger SQL injection ---
+  it("does NOT flag Prisma $queryRaw with tagged template literal as unsafe", async () => {
+    const dir = makeTempDir();
+    fs.writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({ name: "test", dependencies: { "@prisma/client": "^5.0.0" } })
+    );
+    fs.writeFileSync(
+      path.join(dir, "safe-raw.ts"),
+      `
+const id = req.params.id;
+const result = await prisma.$queryRaw\`SELECT * FROM users WHERE id = \${id}\`;
+`
+    );
+    const result = await scanner.scan(dir);
+    const sqlInjection = result.findings.filter((f) => f.category === "db-sql-injection");
+    expect(sqlInjection).toHaveLength(0);
+  });
+
+  // --- Edge case: both typeorm and @prisma/client in package.json — both branches run, no crash ---
+  it("handles both typeorm and @prisma/client in package.json without conflict", async () => {
+    const dir = makeTempDir();
+    fs.writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({
+        name: "test",
+        dependencies: { "@prisma/client": "^5.0.0", typeorm: "^0.3.0" },
+      })
+    );
+    fs.writeFileSync(
+      path.join(dir, "clean.ts"),
+      `
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
+async function getUser(id: string) {
+  return prisma.user.findFirst({
+    select: { id: true, name: true },
+    where: { id },
+  });
+}
+`
+    );
+    // Should not throw and should return a defined findings array
+    const result = await scanner.scan(dir);
+    expect(result.findings).toBeDefined();
+    expect(Array.isArray(result.findings)).toBe(true);
+  });
 });

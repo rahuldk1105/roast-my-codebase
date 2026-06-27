@@ -334,6 +334,104 @@ describe('LicenseScanner', () => {
   });
 });
 
+describe('LicenseScanner — edge cases', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'license-edge-test-'));
+    fs.mkdirSync(path.join(tmpDir, 'node_modules'), { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function createPackageJson(deps: Record<string, string> = {}) {
+    fs.writeFileSync(
+      path.join(tmpDir, 'package.json'),
+      JSON.stringify({ name: 'test', dependencies: deps }),
+    );
+  }
+
+  function createDepPkg(depName: string, license: unknown) {
+    // Support scoped packages like @org/pkg
+    const depDir = path.join(tmpDir, 'node_modules', depName);
+    fs.mkdirSync(depDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(depDir, 'package.json'),
+      JSON.stringify({ name: depName, version: '1.0.0', license }),
+    );
+  }
+
+  it('treats license: null in package.json as UNKNOWN (info finding)', async () => {
+    createPackageJson({ 'null-license': '^1.0.0' });
+    createDepPkg('null-license', null);
+
+    const scanner = new LicenseScanner();
+    const result = await scanner.scan(tmpDir);
+
+    const finding = result.findings.find((f) => f.id === 'license-unknown-null-license');
+    expect(finding).toBeDefined();
+    expect(finding!.severity).toBe('info');
+  });
+
+  it('detects GPL component in "GPL-2.0-OR-LATER OR MIT" SPDX expression', async () => {
+    createPackageJson({ 'dual-pkg': '^1.0.0' });
+    createDepPkg('dual-pkg', 'GPL-2.0-OR-LATER OR MIT');
+
+    const scanner = new LicenseScanner();
+    const result = await scanner.scan(tmpDir);
+
+    const finding = result.findings.find((f) => f.id === 'license-restrictive-dual-pkg');
+    expect(finding).toBeDefined();
+    expect(finding!.severity).toBe('critical');
+  });
+
+  it('handles scoped packages (@org/pkg) path construction correctly', async () => {
+    createPackageJson({ '@org/gpl-pkg': '^1.0.0' });
+    // createDepPkg handles @org/pkg because path.join handles the slash
+    createDepPkg('@org/gpl-pkg', 'GPL-3.0');
+
+    const scanner = new LicenseScanner();
+    const result = await scanner.scan(tmpDir);
+
+    const finding = result.findings.find((f) => f.id === 'license-restrictive-@org/gpl-pkg');
+    expect(finding).toBeDefined();
+    expect(finding!.severity).toBe('critical');
+  });
+
+  it('detects UNLICENSED (all caps) as unknown info finding', async () => {
+    createPackageJson({ 'unlicensed-caps': '^1.0.0' });
+    createDepPkg('unlicensed-caps', 'UNLICENSED');
+
+    const scanner = new LicenseScanner();
+    const result = await scanner.scan(tmpDir);
+
+    const finding = result.findings.find((f) => f.id === 'license-unknown-unlicensed-caps');
+    expect(finding).toBeDefined();
+    expect(finding!.severity).toBe('info');
+  });
+
+  it('overflow message shows correct remaining count when 25 restrictive licenses exist', async () => {
+    const deps: Record<string, string> = {};
+    for (let i = 0; i < 25; i++) {
+      deps[`gpl-edge-${i}`] = '^1.0.0';
+    }
+    createPackageJson(deps);
+    for (let i = 0; i < 25; i++) {
+      createDepPkg(`gpl-edge-${i}`, 'GPL-3.0');
+    }
+
+    const scanner = new LicenseScanner();
+    const result = await scanner.scan(tmpDir);
+
+    expect(result.findings).toHaveLength(21); // 20 capped + 1 overflow
+    const overflow = result.findings.find((f) => f.id === 'license-overflow');
+    expect(overflow).toBeDefined();
+    expect(overflow!.message).toContain('5 more license issues');
+  });
+});
+
 describe('normalizeLicense', () => {
   it('handles a plain string', () => {
     expect(normalizeLicense('MIT')).toBe('MIT');

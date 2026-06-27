@@ -53,7 +53,7 @@ export function getExitCode(findings: import('../types/index.js').Finding[], opt
 export function getAutoExitCode(findings: import('../types/index.js').Finding[]): ExitCode {
   const hasSecurityCritical = findings.some(f =>
     f.severity === 'critical' &&
-    ['secrets', 'env-in-git', 'db-sql-injection', 'python-security'].includes(f.category)
+    ['secrets', 'env-in-git', 'security', 'db-sql-injection', 'python-security', 'php-issues'].includes(f.category)
   );
   if (hasSecurityCritical) return EXIT_CODES.SECURITY_CRITICAL;
 

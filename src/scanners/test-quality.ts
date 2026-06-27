@@ -54,6 +54,16 @@ export class TestQualityScanner implements Scanner {
         continue;
       }
 
+      // Strip single-line comments to avoid false positives from commented-out code.
+      // We join non-comment lines for pattern matching that should not match comments.
+      const nonCommentLines = content
+        .split("\n")
+        .map((line) => {
+          const trimmed = line.trimStart();
+          return trimmed.startsWith("//") ? "" : line;
+        })
+        .join("\n");
+
       // --- Check 9: Test file with no tests ---
       // Recognise plain calls and method calls like it.skip / it.only / test.skip / test.only
       // eslint-disable-next-line security/detect-unsafe-regex
@@ -117,6 +127,7 @@ export class TestQualityScanner implements Scanner {
       }
 
       // --- Check 3: Always-true assertions ---
+      // Use nonCommentLines so patterns inside // comments don't trigger false positives.
       // eslint-disable-next-line security/detect-unsafe-regex
       const alwaysTruePatterns = [
         /expect\s*\(\s*true\s*\)\s*\.\s*toBe\s*\(\s*true\s*\)/,
@@ -128,12 +139,12 @@ export class TestQualityScanner implements Scanner {
       // eslint-disable-next-line security/detect-unsafe-regex
       const stringSelfCompare = /expect\s*\(\s*(['"])([^'"]+)\1\s*\)\s*\.\s*toBe\s*\(\s*(['"])([^'"]+)\3\s*\)/g;
       let strMatch: RegExpExecArray | null;
-      let hasAlwaysTrue = alwaysTruePatterns.some((re) => re.test(content));
+      let hasAlwaysTrue = alwaysTruePatterns.some((re) => re.test(nonCommentLines));
 
       if (!hasAlwaysTrue) {
         stringSelfCompare.lastIndex = 0;
         // eslint-disable-next-line no-cond-assign
-        while ((strMatch = stringSelfCompare.exec(content)) !== null) {
+        while ((strMatch = stringSelfCompare.exec(nonCommentLines)) !== null) {
           if (strMatch[2] === strMatch[4]) {
             hasAlwaysTrue = true;
             break;
@@ -152,6 +163,7 @@ export class TestQualityScanner implements Scanner {
       }
 
       // --- Check 4: Skipped tests (count for project-level finding) ---
+      // Use nonCommentLines so commented-out it.skip() calls don't inflate the count.
       // eslint-disable-next-line security/detect-unsafe-regex
       const skipPatterns = [
         /\bit\.skip\s*\(/g,
@@ -161,7 +173,7 @@ export class TestQualityScanner implements Scanner {
         /\bdescribe\.skip\s*\(/g,
       ];
       for (const re of skipPatterns) {
-        const matches = content.match(re) || [];
+        const matches = nonCommentLines.match(re) || [];
         totalSkipped += matches.length;
       }
 
