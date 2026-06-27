@@ -54,6 +54,9 @@ import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
 import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
 import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment } from "../report/index.js";
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
+import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
+import { checkRegression, formatRegressionOutput } from "../regression/index.js";
+import { installPreCommitHook, uninstallPreCommitHook } from "../hooks/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -96,13 +99,68 @@ export function createCli(): Command {
     .option("--sarif", "Output results as SARIF (for GitHub Code Scanning)")
     .option("--sarif-file", "Save SARIF results to .roast-results.sarif")
     .option("--pr-comment", "Post report as GitHub PR comment (uses GITHUB_TOKEN)")
+    .option("--init-ci", "Generate .github/workflows/roast.yml CI workflow")
+    .option("--fail-on-regression", "Fail if health score dropped since last --track snapshot")
+    .option("--regression-tolerance <points>", "Points of drop to allow before failing (default: 0)", parseInt)
+    .option("--install-hooks", "Install git pre-commit hook to run roast before every commit")
+    .option("--uninstall-hooks", "Remove the roast pre-commit hook")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean }) => {
       const rootDir = path.resolve(targetPath);
+
+      if (options.initCi) {
+        const pm = detectPackageManager(rootDir);
+        const ciConfig = {
+          threshold: options.threshold ?? 60,
+          prComment: true,
+          sarif: true,
+          nodeVersion: "20.x",
+          packageManager: pm,
+        };
+        const result = writeCIWorkflow(rootDir, ciConfig);
+        if (result.alreadyExists) {
+          console.log(chalk.yellow(`\n⚠ ${result.path} already exists — not overwriting.\n`));
+          console.log(chalk.dim("  Delete it and re-run to regenerate.\n"));
+        } else {
+          console.log(chalk.green(`\n✓ Created ${result.path}\n`));
+          console.log(chalk.dim("  Add GITHUB_TOKEN secret in repo settings if not already present.\n"));
+          console.log(chalk.dim("  Commit and push to activate.\n"));
+        }
+        process.exit(0);
+      }
+
+      if (options.installHooks) {
+        const threshold = options.threshold ?? 60;
+        const result = installPreCommitHook(rootDir, threshold);
+        if (result.alreadyInstalled) {
+          console.log(chalk.yellow(`\n⚠ Hook already installed at ${result.hookPath}\n`));
+        } else if (result.success) {
+          const hookType = result.huskyDetected ? "husky" : "git";
+          console.log(chalk.green(`\n✓ Pre-commit hook installed (${hookType}) at ${result.hookPath}\n`));
+          console.log(chalk.dim(`  Threshold: ${threshold}/100 — commits that drop below this will be blocked.\n`));
+          if (!result.huskyDetected) {
+            console.log(chalk.dim("  Tip: Consider using husky for team-wide hook sharing.\n"));
+          }
+        } else {
+          console.log(chalk.red(`\n✗ Failed to install hook: ${result.message}\n`));
+          process.exit(1);
+        }
+        process.exit(0);
+      }
+
+      if (options.uninstallHooks) {
+        const result = uninstallPreCommitHook(rootDir);
+        if (result.success) {
+          console.log(chalk.green(`\n✓ Pre-commit hook removed from ${result.hookPath}\n`));
+        } else {
+          console.log(chalk.yellow(`\n⚠ ${result.message}\n`));
+        }
+        process.exit(0);
+      }
 
       if (!fs.existsSync(rootDir)) {
         console.error(`Error: "${rootDir}" does not exist.`);
@@ -516,6 +574,16 @@ export function createCli(): Command {
             console.log(chalk.dim("  Last 7 days: ") + trendSummary);
           }
           console.log();
+        }
+
+        // Regression check
+        if (options.failOnRegression) {
+          const tolerance = options.regressionTolerance ?? 0;
+          const regression = checkRegression(rootDir, health.score, tolerance);
+          console.log("\n" + formatRegressionOutput(regression));
+          if (regression.isRegression) {
+            process.exit(1);
+          }
         }
 
         // Interactive mode
