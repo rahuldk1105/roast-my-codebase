@@ -9,3 +9,4 @@ dist/
 .roast-report.html
 .roast-results.sarif
 .roast-junit.xml
+.roast-bundle-sizes.json

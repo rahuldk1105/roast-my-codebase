@@ -407,6 +407,7 @@ export default {
           licenseResult,
           databaseResult,
           configAuditResult,
+          bundleSizeResult,
         ] = await Promise.all([
           new TodoScanner().scan(scanRootDir),
           new DependencyScanner().scan(scanRootDir),
@@ -425,6 +426,7 @@ export default {
           new LicenseScanner().scan(scanRootDir),
           new DatabaseScanner().scan(scanRootDir),
           new ConfigAuditScanner().scan(scanRootDir),
+          new BundleSizeScanner().scan(scanRootDir),
         ]);
 
         allFindings.push(
@@ -445,6 +447,7 @@ export default {
           ...licenseResult.findings,
           ...databaseResult.findings,
           ...configAuditResult.findings,
+          ...bundleSizeResult.findings,
         );
 
         // Group 3: Plugin scanners (sequential — unknown side effects)
@@ -503,6 +506,7 @@ export default {
           new LicenseScanner(),
           new DatabaseScanner(),
           new ConfigAuditScanner(),
+          new BundleSizeScanner(),
           ...pluginScanners,
           ...(customRulesScanner ? [customRulesScanner] : []),
         ];
@@ -581,6 +585,7 @@ export default {
           licenseResult,
           databaseResult,
           configAuditResult,
+          bundleSizeResult,
         ] = await Promise.all([
           new TodoScanner().scan(rootDir),
           new DependencyScanner().scan(rootDir),
@@ -599,6 +604,7 @@ export default {
           new LicenseScanner().scan(rootDir),
           new DatabaseScanner().scan(rootDir),
           new ConfigAuditScanner().scan(rootDir),
+          new BundleSizeScanner().scan(rootDir),
         ]);
 
         allFindings.push(
@@ -619,6 +625,7 @@ export default {
           ...licenseResult.findings,
           ...databaseResult.findings,
           ...configAuditResult.findings,
+          ...bundleSizeResult.findings,
         );
 
         // Group 2: Language-specific scanners in parallel
