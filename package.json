@@ -50,7 +50,8 @@
     "chokidar": "^5.0.0",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.3",
-    "ora": "^9.4.1"
+    "ora": "^9.4.1",
+    "picomatch": "^4.0.4"
   },
   "devDependencies": {
     "@types/chokidar": "^1.7.5",

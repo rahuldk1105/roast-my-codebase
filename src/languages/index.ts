@@ -2,6 +2,8 @@
  * Multi-language support - Language detection and configuration
  */
 
+import path from "path";
+
 export type SupportedLanguage =
   | "javascript"
   | "typescript"
@@ -121,7 +123,7 @@ export function detectProjectLanguage(
   // Check for language-specific package files
   for (const [lang, config] of Object.entries(LANGUAGE_CONFIGS)) {
     for (const packageFile of config.packageFiles) {
-      const fullPath = require("path").join(rootDir, packageFile);
+      const fullPath = path.join(rootDir, packageFile);
       if (fs.existsSync(fullPath)) {
         detectedLanguages.push(lang as SupportedLanguage);
         break; // Found one package file for this language
