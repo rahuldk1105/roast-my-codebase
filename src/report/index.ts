@@ -10,6 +10,7 @@ export { renderMarkdownReport } from "./markdown.js";
 export { renderHtmlReport, saveHtmlReport } from "./html.js";
 export { detectPRContext, postPRComment, formatPRComment } from "./pr-comment.js";
 export { renderSarifReport, saveSarifReport } from "./sarif.js";
+export { renderJUnitReport, saveJUnitReport } from "./junit.js";
 export { buildFolderTree, renderHotmap } from "./hotmap.js";
 export type { FolderNode } from "./hotmap.js";
 

@@ -8,3 +8,4 @@ dist/
 .roast-cache.json
 .roast-report.html
 .roast-results.sarif
+.roast-junit.xml

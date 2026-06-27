@@ -54,12 +54,13 @@ import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
 import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
 import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
-import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment } from "../report/index.js";
+import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment, renderJUnitReport, saveJUnitReport } from "../report/index.js";
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
 import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
 import { checkRegression, formatRegressionOutput } from "../regression/index.js";
 import { installPreCommitHook, uninstallPreCommitHook } from "../hooks/index.js";
 import { loadPlugins } from "../plugins/index.js";
+import { startDashboard } from "../serve/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -101,6 +102,8 @@ export function createCli(): Command {
     .option("--since <ref>", "Only analyze files changed since git ref (e.g., main)")
     .option("--sarif", "Output results as SARIF (for GitHub Code Scanning)")
     .option("--sarif-file", "Save SARIF results to .roast-results.sarif")
+    .option("--junit", "Output results as JUnit XML (for Jenkins/GitLab/Bitbucket)")
+    .option("--junit-file", "Save JUnit XML to .roast-junit.xml")
     .option("--pr-comment", "Post report as GitHub PR comment (uses GITHUB_TOKEN)")
     .option("--init-ci", "Generate .github/workflows/roast.yml CI workflow")
     .option("--fail-on-regression", "Fail if health score dropped since last --track snapshot")
@@ -117,7 +120,7 @@ export function createCli(): Command {
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -686,7 +689,15 @@ export default {
         }
 
         // Render
-        if (options.sarif || options.sarifFile) {
+        if (options.junit || options.junitFile) {
+          const junitOutput = renderJUnitReport(report, rootDir);
+          if (options.junitFile) {
+            saveJUnitReport(junitOutput, rootDir);
+            console.log(chalk.green('\n✓ JUnit report saved to .roast-junit.xml\n'));
+          } else {
+            console.log(junitOutput);
+          }
+        } else if (options.sarif || options.sarifFile) {
           const sarifOutput = renderSarifReport(report, rootDir);
           if (options.sarifFile) {
             saveSarifReport(sarifOutput, rootDir);
