@@ -1,6 +1,8 @@
 import fg from "fast-glob";
 import { Scanner, ScanResult, Finding } from "../types/index.js";
-import { SOURCE_EXTENSIONS, IGNORE_PATTERNS } from "../utils/constants.js";
+import { SOURCE_EXTENSIONS, IGNORE_PATTERNS,
+  SAFE_GLOB_OPTIONS,
+} from "../utils/constants.js";
 import { readFileLines, relativePath } from "../utils/files.js";
 
 const TODO_PATTERNS = [/\bTODO\b/, /\bFIXME\b/, /\bHACK\b/, /\bXXX\b/];
@@ -15,6 +17,7 @@ export class TodoScanner implements Scanner {
     const files = await fg(extGlob, {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       absolute: true,
     });
 

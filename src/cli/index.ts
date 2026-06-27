@@ -186,17 +186,31 @@ export function createCli(): Command {
 
       if (options.initPlugin) {
         const pluginName = options.initPlugin;
+        const SAFE_PLUGIN_NAME = /^[a-z0-9-]+$/;
+        if (!SAFE_PLUGIN_NAME.test(pluginName.replace(/^roast-plugin-/, ''))) {
+          console.error('Error: Plugin name must contain only lowercase letters, numbers, and hyphens.');
+          process.exit(1);
+        }
         const fullName = pluginName.startsWith('roast-plugin-') ? pluginName : `roast-plugin-${pluginName}`;
-        const pluginDir = path.join(rootDir, fullName);
-
-        if (fs.existsSync(pluginDir)) {
-          console.log(chalk.yellow(`\n⚠ Directory ${fullName} already exists.\n`));
+        let pluginDir: string;
+        try {
+          pluginDir = validateOutputPath(rootDir, fullName);
+        } catch {
+          console.error(`Error: Plugin name "${fullName}" would escape the project directory.`);
           process.exit(1);
         }
 
-        fs.mkdirSync(path.join(pluginDir, 'src'), { recursive: true });
+        try {
+          fs.mkdirSync(path.join(pluginDir!, 'src'), { recursive: false });
+        } catch (e: any) {
+          if (e.code === 'EEXIST') {
+            console.log(chalk.yellow(`\n⚠ Directory ${fullName} already exists.\n`));
+            process.exit(1);
+          }
+          fs.mkdirSync(path.join(pluginDir!, 'src'), { recursive: true });
+        }
 
-        fs.writeFileSync(path.join(pluginDir, 'package.json'), JSON.stringify({
+        fs.writeFileSync(path.join(pluginDir!, 'package.json'), JSON.stringify({
           name: fullName, version: '0.1.0',
           description: 'A roast-my-codebase plugin',
           type: 'module', main: 'dist/index.js',
@@ -205,7 +219,7 @@ export function createCli(): Command {
           devDependencies: { typescript: '^5.0.0' }
         }, null, 2));
 
-        fs.writeFileSync(path.join(pluginDir, 'src', 'index.ts'),
+        fs.writeFileSync(path.join(pluginDir!, 'src', 'index.ts'),
 `import type { Scanner, ScanResult, Finding } from 'roast-my-codebase/types';
 
 export default {
@@ -222,7 +236,7 @@ export default {
 };
 `);
 
-        fs.writeFileSync(path.join(pluginDir, 'tsconfig.json'), JSON.stringify({
+        fs.writeFileSync(path.join(pluginDir!, 'tsconfig.json'), JSON.stringify({
           compilerOptions: {
             target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext',
             outDir: './dist', rootDir: './src', strict: true, declaration: true

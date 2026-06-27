@@ -1,7 +1,9 @@
 import fg from "fast-glob";
 import fs from "fs";
 import { Scanner, ScanResult, Finding } from "../types/index.js";
-import { IGNORE_PATTERNS } from "../utils/constants.js";
+import { IGNORE_PATTERNS,
+  SAFE_GLOB_OPTIONS,
+} from "../utils/constants.js";
 import { relativePath } from "../utils/files.js";
 
 interface TypeSafetyStats {
@@ -21,6 +23,7 @@ export class TypeSafetyScanner implements Scanner {
     const allFiles = await fg(["**/*.ts", "**/*.tsx"], {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       absolute: true,
     });
 

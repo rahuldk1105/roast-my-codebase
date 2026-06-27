@@ -115,13 +115,13 @@ describe("formatPRComment", () => {
   it("contains top finding file reference", () => {
     const report = makeReport();
     const result = formatPRComment(report);
-    expect(result).toContain("`auth.service.ts`");
+    expect(result).toContain("`auth\\.service\\.ts`");
   });
 
   it("contains roast target in blockquote", () => {
     const report = makeReport();
     const result = formatPRComment(report);
-    expect(result).toContain("> 🔥 **auth.service.ts**");
+    expect(result).toContain("> 🔥 **auth\\.service\\.ts**");
   });
 
   it("contains verdict in italics", () => {

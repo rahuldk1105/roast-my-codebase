@@ -87,7 +87,7 @@ describe("generateCIWorkflow", () => {
   it("includes upload-sarif step when sarif is true", () => {
     const yaml = generateCIWorkflow({ ...baseConfig, sarif: true });
     expect(yaml).toContain("upload-sarif");
-    expect(yaml).toContain("github/codeql-action/upload-sarif@v3");
+    expect(yaml).toContain("github/codeql-action/upload-sarif@v4");
   });
 
   it("does not include upload-sarif step when sarif is false", () => {

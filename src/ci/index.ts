@@ -46,7 +46,7 @@ export function generateCIWorkflow(config: CIConfig): string {
   const sarifStep = sarif
     ? `
       - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: .roast-results.sarif`

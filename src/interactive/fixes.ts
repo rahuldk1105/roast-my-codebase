@@ -76,7 +76,14 @@ function fixUnusedDependency(
   }
 
   const packageName = match[1];
-  const pkgPath = path.join(rootDir, "package.json");
+
+  // Validate package name to prevent command injection
+  if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(packageName)) {
+    return {
+      success: false,
+      message: `Invalid package name: ${packageName}`,
+    };
+  }
 
   try {
     if (dryRun) {

@@ -2,7 +2,9 @@ import fg from "fast-glob";
 import fs from "fs";
 import { spawnSync } from "child_process";
 import { Scanner, ScanResult, Finding } from "../types/index.js";
-import { IGNORE_PATTERNS } from "../utils/constants.js";
+import { IGNORE_PATTERNS,
+  SAFE_GLOB_OPTIONS,
+} from "../utils/constants.js";
 import { relativePath } from "../utils/files.js";
 
 interface SecretPattern {
@@ -151,6 +153,7 @@ export class SecurityScanner implements Scanner {
     const files = await fg(["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"], {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       absolute: true,
     });
 

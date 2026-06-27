@@ -41,6 +41,10 @@ export function detectPRContext(): PRCommentConfig | null {
   return { token, repo, prNumber };
 }
 
+function escapeMd(text: string): string {
+  return text.replace(/[\\`*_{}[\]()#+\-.!|]/g, '\\$&');
+}
+
 function gradeEmoji(grade: string): string {
   const letter = grade.charAt(0).toUpperCase();
   if (letter === 'A') return '✅';
@@ -108,8 +112,8 @@ export function formatPRComment(report: RoastReport): string {
   if (topFindings.length > 0) {
     for (const finding of topFindings) {
       const icon = finding.severity === 'critical' ? '🔴' : '⚠️';
-      const fileRef = finding.file ? `\`${finding.file}\` — ` : '';
-      lines.push(`- ${icon} ${fileRef}${finding.message}`);
+      const fileRef = finding.file ? `\`${escapeMd(finding.file)}\` — ` : '';
+      lines.push(`- ${icon} ${fileRef}${escapeMd(finding.message)}`);
     }
     lines.push('');
   }
@@ -118,7 +122,7 @@ export function formatPRComment(report: RoastReport): string {
   const topRoasts = roasts.slice(0, 3);
   if (topRoasts.length > 0) {
     for (const roast of topRoasts) {
-      lines.push(`> 🔥 **${roast.target}**: ${roast.message}`);
+      lines.push(`> 🔥 **${escapeMd(roast.target)}**: ${escapeMd(roast.message)}`);
     }
     lines.push('');
   }
@@ -210,7 +214,8 @@ export async function postPRComment(
     }
   } catch (err) {
     // Network error fetching comments — fall through to create a new one
-    console.error('roast-my-codebase: failed to list PR comments:', err);
+    const msg = err instanceof Error ? err.message.replace(/Bearer\s+\S+/gi, 'Bearer <redacted>') : 'unknown';
+    console.error(`roast-my-codebase: failed to list PR comments: ${msg}`);
   }
 
   try {

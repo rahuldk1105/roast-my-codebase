@@ -33,6 +33,12 @@ export function buildIgnorePatterns(extraPatterns: string[] = []): string[] {
   return [...IGNORE_PATTERNS, ...extraPatterns];
 }
 
+// Shared fast-glob options to prevent symlink loops and runaway traversal
+export const SAFE_GLOB_OPTIONS = {
+  followSymbolicLinks: false,
+  deep: 20,
+} as const;
+
 export const LARGE_FILE_THRESHOLDS = {
   warning: 500,
   large: 1000,

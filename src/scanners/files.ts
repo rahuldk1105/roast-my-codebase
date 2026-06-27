@@ -5,6 +5,7 @@ import {
   SOURCE_EXTENSIONS,
   IGNORE_PATTERNS,
   LARGE_FILE_THRESHOLDS,
+  SAFE_GLOB_OPTIONS,
 } from "../utils/constants.js";
 import { countLines, relativePath } from "../utils/files.js";
 
@@ -18,12 +19,14 @@ export class FileScanner implements Scanner {
     const allFiles = await fg(extGlob, {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       absolute: true,
     });
 
     const allProjectFiles = await fg("**/*", {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       onlyFiles: true,
     });
 

@@ -1,7 +1,9 @@
 import fg from "fast-glob";
 import fs from "fs";
 import { Scanner, ScanResult, Finding } from "../types/index.js";
-import { SOURCE_EXTENSIONS, IGNORE_PATTERNS } from "../utils/constants.js";
+import { SOURCE_EXTENSIONS, IGNORE_PATTERNS,
+  SAFE_GLOB_OPTIONS,
+} from "../utils/constants.js";
 import { relativePath } from "../utils/files.js";
 
 const WINDOW_SIZE = 6;
@@ -23,6 +25,7 @@ export class DuplicateScanner implements Scanner {
     const files = await fg(extGlob, {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       absolute: true,
     });
 

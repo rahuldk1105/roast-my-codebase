@@ -1,7 +1,9 @@
 import fs from "fs";
 import fg from "fast-glob";
 import { Scanner, ScanResult, Finding } from "../types/index.js";
-import { SOURCE_EXTENSIONS, IGNORE_PATTERNS } from "../utils/constants.js";
+import { SOURCE_EXTENSIONS, IGNORE_PATTERNS,
+  SAFE_GLOB_OPTIONS,
+} from "../utils/constants.js";
 import { relativePath } from "../utils/files.js";
 
 interface FunctionInfo {
@@ -30,6 +32,7 @@ export class ComplexityScanner implements Scanner {
     const allFiles = await fg(extGlob, {
       cwd: rootDir,
       ignore: IGNORE_PATTERNS,
+      ...SAFE_GLOB_OPTIONS,
       absolute: true,
     });
 

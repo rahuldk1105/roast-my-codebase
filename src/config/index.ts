@@ -105,7 +105,7 @@ export function loadConfig(rootDir: string): RoastConfig {
       ],
     };
   } catch (error) {
-    console.warn(`Warning: Failed to load .roastrc.json: ${error}`);
+    console.warn(`Warning: Failed to load .roastrc.json: ${error instanceof Error ? error.message.replace(/[A-Z]:\\[^\s"']+|\/[^\s"']+/g, '<path>') : 'unknown error'}`);
     return DEFAULT_CONFIG;
   }
 }
