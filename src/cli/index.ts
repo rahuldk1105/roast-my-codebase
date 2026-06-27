@@ -61,7 +61,7 @@ import {
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
 import { generateRoasts, generateVerdict, generateContextualVerdict } from "../roasts/index.js";
-import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge } from "../report/index.js";
+import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge, calculateScoreBreakdown } from "../report/index.js";
 import { Finding, RoastReport, Scanner, HealthScore } from "../types/index.js";
 import { generateFixSuggestions } from "../fixes/index.js";
 import { startWatchMode, renderWatchSummary } from "../watch/index.js";
@@ -152,14 +152,16 @@ export function createCli(): Command {
     .option("--explain [category]", "Explain a finding category (or list all categories)")
     .option("--file <path>", "Scan a single file and show all findings for it")
     .option("--perf", "Show scanner performance timing after scan")
+    .option("--breakdown", "Show score breakdown by category after scan")
     .option("--no-summary", "Disable automatic GitHub Actions step summary")
     .option("--output-dir <path>", "Save all report formats (JSON, HTML, SARIF, JUnit, Markdown) to a directory")
+    .option("--exit-codes", "Use detailed exit codes (2=threshold, 3=regression, 4=trend, 5=security, 6=license)")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sinceCommit?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean; notify?: string; explain?: string | boolean; file?: string; perf?: boolean; summary?: boolean; outputDir?: string }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sinceCommit?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean; notify?: string; explain?: string | boolean; file?: string; perf?: boolean; breakdown?: boolean; summary?: boolean; outputDir?: string; exitCodes?: boolean }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.explain !== undefined) {
@@ -1010,6 +1012,21 @@ export default {
           }
         }
 
+        // Diff mode — filter findings to files changed since a specific commit/ref
+        if (options.sinceCommit) {
+          const diffRanges = getChangedLineRanges(rootDir, options.sinceCommit);
+          if (diffRanges.length > 0) {
+            const beforeCount = report.findings.length;
+            const diffFiltered = filterFindingsByChangedLines(report.findings, diffRanges);
+            const changedFileCount = new Set(diffRanges.map(r => r.file)).size;
+            console.log(chalk.dim(`\n  Diff mode (${options.sinceCommit}): ${changedFileCount} changed file(s) — showing ${diffFiltered.length}/${beforeCount} findings\n`));
+            report.findings = diffFiltered;
+            report.health = calculateHealth(diffFiltered);
+          } else {
+            console.log(chalk.yellow(`\n  ⚠ No diff found for "${options.sinceCommit}" — showing all findings\n`));
+          }
+        }
+
         // Track health history if requested
         if (options.track) {
           const snapshot = createSnapshot(health, ignoredFilteredFindings, rootDir);
@@ -1031,7 +1048,7 @@ export default {
           const regression = checkRegression(rootDir, health.score, tolerance);
           console.log("\n" + formatRegressionOutput(regression));
           if (regression.isRegression) {
-            process.exit(1);
+            process.exit(options.exitCodes ? EXIT_CODES.REGRESSION : EXIT_CODES.GENERIC_FAILURE);
           }
         }
 
@@ -1041,7 +1058,7 @@ export default {
           const trendResult = checkTrendGating(rootDir, health.score, dropsRequired);
           console.log("\n" + formatTrendResult(trendResult));
           if (trendResult.shouldFail) {
-            process.exit(1);
+            process.exit(options.exitCodes ? EXIT_CODES.TREND_FAILURE : EXIT_CODES.GENERIC_FAILURE);
           }
         }
 
@@ -1157,7 +1174,7 @@ export default {
 
           // Check threshold if provided
           if (options.threshold !== undefined && report.health.score < options.threshold) {
-            process.exit(1);
+            process.exit(options.exitCodes ? EXIT_CODES.THRESHOLD_EXCEEDED : EXIT_CODES.GENERIC_FAILURE);
           }
         } else if (options.markdown || options.markdownFile) {
           const markdownOutput = renderMarkdownReport(report);
@@ -1210,6 +1227,36 @@ export default {
         if (options.badge) {
           const badgeSvg = generateBadgeSvg(health);
           saveBadge(badgeSvg, rootDir);
+        }
+
+        // Score breakdown
+        if (options.breakdown) {
+          const bd = calculateScoreBreakdown(report.findings, report.health.score);
+          if (bd.categories.length === 0) {
+            console.log(chalk.green('\n  ✓ No score deductions — clean codebase!\n'));
+          } else {
+            console.log(chalk.bold('\n  Score Breakdown\n'));
+            console.log(chalk.dim('  ' + '─'.repeat(52)));
+            const maxAbs = Math.abs(bd.categories[0]?.deduction ?? 1);
+            for (const cat of bd.categories.slice(0, 12)) {
+              const barLen = Math.max(1, Math.round((Math.abs(cat.deduction) / maxAbs) * 16));
+              const bar = '█'.repeat(barLen).padEnd(16, '░');
+              const pts = cat.deduction.toFixed(1).padStart(7);
+              const color = Math.abs(cat.deduction) >= 10 ? chalk.red
+                           : Math.abs(cat.deduction) >= 4 ? chalk.yellow
+                           : chalk.dim;
+              console.log(
+                `  ${color(bar)} ${chalk.white(cat.displayName.padEnd(20))}` +
+                `${color(pts)} pts  ` +
+                chalk.dim(`(${cat.findingCount})`)
+              );
+            }
+            if (bd.categories.length > 12) {
+              console.log(chalk.dim(`  ... +${bd.categories.length - 12} more`));
+            }
+            console.log(chalk.dim('  ' + '─'.repeat(52)));
+            console.log(chalk.dim(`  Total: ${bd.totalDeduction.toFixed(1)} pts  (100 → ${bd.finalScore})\n`));
+          }
         }
 
         // GitHub Actions step summary (auto-enabled in CI)

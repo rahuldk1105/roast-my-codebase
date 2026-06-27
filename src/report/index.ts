@@ -14,6 +14,11 @@ export { renderSarifReport, saveSarifReport } from "./sarif.js";
 export { renderJUnitReport, saveJUnitReport } from "./junit.js";
 export { buildFolderTree, renderHotmap } from "./hotmap.js";
 export type { FolderNode } from "./hotmap.js";
+export { isGitHubActions, writeGitHubStepSummary } from "./github-summary.js";
+export { calculateScoreBreakdown } from '../scoring/breakdown.js';
+export type { ScoreBreakdown, CategoryScore } from '../scoring/breakdown.js';
+export { saveAllReports } from './output-dir.js';
+export type { OutputDirResult } from './output-dir.js';
 
 export function renderReport(report: RoastReport, options?: { ascii?: boolean }): string {
   const sections: string[] = [];
