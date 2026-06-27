@@ -59,7 +59,7 @@ import {
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
-import { generateRoasts, generateVerdict } from "../roasts/index.js";
+import { generateRoasts, generateVerdict, generateContextualVerdict } from "../roasts/index.js";
 import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge } from "../report/index.js";
 import { Finding, RoastReport, Scanner, HealthScore } from "../types/index.js";
 import { generateFixSuggestions } from "../fixes/index.js";
@@ -76,9 +76,11 @@ import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, d
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
 import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
 import { checkRegression, formatRegressionOutput } from "../regression/index.js";
+import { checkTrendGating, formatTrendResult } from "../trend/index.js";
 import { installPreCommitHook, uninstallPreCommitHook } from "../hooks/index.js";
 import { loadPlugins } from "../plugins/index.js";
 import { startDashboard } from "../serve/index.js";
+import { updateReadmeBadge } from "../readme/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -126,6 +128,8 @@ export function createCli(): Command {
     .option("--init-ci", "Generate .github/workflows/roast.yml CI workflow")
     .option("--fail-on-regression", "Fail if health score dropped since last --track snapshot")
     .option("--regression-tolerance <points>", "Points of drop to allow before failing (default: 0)", parseInt)
+    .option("--fail-on-trend", "Fail CI if score has been declining for 3+ consecutive runs")
+    .option("--trend-drops <n>", "Number of consecutive drops to trigger failure (default: 3)", parseInt)
     .option("--install-hooks", "Install git pre-commit hook to run roast before every commit")
     .option("--uninstall-hooks", "Remove the roast pre-commit hook")
     .option("--show-ignored", "Show which patterns are active in .roastignore")
@@ -136,12 +140,13 @@ export function createCli(): Command {
     .option("--serve", "Open interactive web dashboard in browser")
     .option("--port <number>", "Port for --serve dashboard (default: 7777)", parseInt)
     .option("--bundle", "Scan build output for bundle size regressions")
+    .option("--update-readme", "Update health badge in README.md with current score")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -518,7 +523,7 @@ export default {
           if (isFirstRun) {
             // First run: show full report
             const roasts = await generateRoasts(findings, aiConfig, rootDir);
-            const verdict = generateVerdict(health);
+            const verdict = generateContextualVerdict(health, findings);
 
             const fixes = options.fix ? generateFixSuggestions(findings) : undefined;
 
@@ -783,7 +788,7 @@ export default {
         const roasts = await generateRoasts(ignoredFilteredFindings, aiConfig, rootDir);
 
         // Generate verdict
-        const verdict = generateVerdict(health);
+        const verdict = generateContextualVerdict(health, ignoredFilteredFindings);
 
         // Get project name
         const projectName = getProjectName(rootDir);
@@ -837,6 +842,16 @@ export default {
           const regression = checkRegression(rootDir, health.score, tolerance);
           console.log("\n" + formatRegressionOutput(regression));
           if (regression.isRegression) {
+            process.exit(1);
+          }
+        }
+
+        // Trend gating check
+        if (options.failOnTrend) {
+          const dropsRequired = options.trendDrops ?? 3;
+          const trendResult = checkTrendGating(rootDir, health.score, dropsRequired);
+          console.log("\n" + formatTrendResult(trendResult));
+          if (trendResult.shouldFail) {
             process.exit(1);
           }
         }
@@ -895,7 +910,7 @@ export default {
               const filteredFresh = filterIgnoredFindings(freshFindings, allIgnorePatterns, rootDir);
               const freshHealth = calculateHealth(filteredFresh);
               const freshRoasts = await generateRoasts(filteredFresh, aiConfig, rootDir);
-              const freshVerdict = generateVerdict(freshHealth);
+              const freshVerdict = generateContextualVerdict(freshHealth, filteredFresh);
 
               return {
                 projectName: getProjectName(rootDir),
@@ -959,6 +974,16 @@ export default {
         if (options.badge) {
           const badgeSvg = generateBadgeSvg(health);
           saveBadge(badgeSvg, rootDir);
+        }
+
+        // Update README badge if requested
+        if (options.updateReadme) {
+          const result = updateReadmeBadge(rootDir, health);
+          if (result.updated) {
+            console.log(chalk.green(`\n✓ README.md updated (${result.method})\n`));
+          } else if (result.method === 'no-readme') {
+            console.log(chalk.yellow('\n⚠ No README.md found\n'));
+          }
         }
 
         // Post PR comment if requested
