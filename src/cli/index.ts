@@ -306,62 +306,59 @@ export default {
       const runScanners = async (scanRootDir: string, ignorePatterns: string[] = []): Promise<{ findings: Finding[]; health: HealthScore }> => {
         const allFindings: Finding[] = [];
 
+        // Group 0: FileScanner (needed for stats, run first)
         const fileScanner = new FileScanner();
         const fileResult = await fileScanner.scan(scanRootDir);
         allFindings.push(...fileResult.findings);
 
-        const todoScanner = new TodoScanner();
-        const todoResult = await todoScanner.scan(scanRootDir);
-        allFindings.push(...todoResult.findings);
+        // Group 1: All independent scanners in parallel
+        const [
+          todoResult,
+          depResult,
+          circularResult,
+          structureResult,
+          complexityResult,
+          duplicateResult,
+          deadExportResult,
+          typeSafetyResult,
+          testCoverageResult,
+          gitInsightsResult,
+          securityResult,
+          frameworkResult,
+          depHealthResult,
+        ] = await Promise.all([
+          new TodoScanner().scan(scanRootDir),
+          new DependencyScanner().scan(scanRootDir),
+          new CircularDependencyScanner().scan(scanRootDir),
+          new StructureScanner().scan(scanRootDir),
+          new ComplexityScanner().scan(scanRootDir),
+          new DuplicateScanner().scan(scanRootDir),
+          new DeadExportScanner().scan(scanRootDir),
+          new TypeSafetyScanner().scan(scanRootDir),
+          new TestCoverageScanner().scan(scanRootDir),
+          new GitInsightsScanner().scan(scanRootDir),
+          new SecurityScanner().scan(scanRootDir),
+          new FrameworkScanner().scan(scanRootDir),
+          new DepHealthScanner().scan(scanRootDir),
+        ]);
 
-        const depScanner = new DependencyScanner();
-        const depResult = await depScanner.scan(scanRootDir);
-        allFindings.push(...depResult.findings);
+        allFindings.push(
+          ...todoResult.findings,
+          ...depResult.findings,
+          ...circularResult.findings,
+          ...structureResult.findings,
+          ...complexityResult.findings,
+          ...duplicateResult.findings,
+          ...deadExportResult.findings,
+          ...typeSafetyResult.findings,
+          ...testCoverageResult.findings,
+          ...gitInsightsResult.findings,
+          ...securityResult.findings,
+          ...frameworkResult.findings,
+          ...depHealthResult.findings,
+        );
 
-        const circularScanner = new CircularDependencyScanner();
-        const circularResult = await circularScanner.scan(scanRootDir);
-        allFindings.push(...circularResult.findings);
-
-        const structureScanner = new StructureScanner();
-        const structureResult = await structureScanner.scan(scanRootDir);
-        allFindings.push(...structureResult.findings);
-
-        const complexityScanner = new ComplexityScanner();
-        const complexityResult = await complexityScanner.scan(scanRootDir);
-        allFindings.push(...complexityResult.findings);
-
-        const duplicateScanner = new DuplicateScanner();
-        const duplicateResult = await duplicateScanner.scan(scanRootDir);
-        allFindings.push(...duplicateResult.findings);
-
-        const deadExportScanner = new DeadExportScanner();
-        const deadExportResult = await deadExportScanner.scan(scanRootDir);
-        allFindings.push(...deadExportResult.findings);
-
-        const typeSafetyScanner = new TypeSafetyScanner();
-        const typeSafetyResult = await typeSafetyScanner.scan(scanRootDir);
-        allFindings.push(...typeSafetyResult.findings);
-
-        const testCoverageScanner = new TestCoverageScanner();
-        const testCoverageResult = await testCoverageScanner.scan(scanRootDir);
-        allFindings.push(...testCoverageResult.findings);
-
-        const gitInsightsScanner = new GitInsightsScanner();
-        const gitInsightsResult = await gitInsightsScanner.scan(scanRootDir);
-        allFindings.push(...gitInsightsResult.findings);
-
-        const securityScanner = new SecurityScanner();
-        const securityResult = await securityScanner.scan(scanRootDir);
-        allFindings.push(...securityResult.findings);
-
-        const frameworkScanner = new FrameworkScanner();
-        const frameworkResult = await frameworkScanner.scan(scanRootDir);
-        allFindings.push(...frameworkResult.findings);
-
-        const depHealthScanner = new DepHealthScanner();
-        const depHealthResult = await depHealthScanner.scan(scanRootDir);
-        allFindings.push(...depHealthResult.findings);
-
+        // Group 3: Plugin scanners (sequential — unknown side effects)
         for (const pluginScanner of pluginScanners) {
           try {
             const pluginResult = await pluginScanner.scan(scanRootDir);
@@ -456,171 +453,130 @@ export default {
       try {
         const allFindings: Finding[] = [];
 
-        // Run scanners
+        // Group 0: FileScanner (need its stats for the report)
         const fileScanner = new FileScanner();
         const fileResult = await fileScanner.scan(rootDir);
         allFindings.push(...fileResult.findings);
         const stats = fileResult.stats;
 
-        spinner.text = "Detecting TODOs...";
-        const todoScanner = new TodoScanner();
-        const todoResult = await todoScanner.scan(rootDir);
-        allFindings.push(...todoResult.findings);
+        // Group 1: All independent scanners in parallel
+        spinner.text = "Running core scanners...";
+        const [
+          todoResult,
+          depResult,
+          circularResult,
+          structureResult,
+          complexityResult,
+          duplicateResult,
+          deadExportResult,
+          typeSafetyResult,
+          testCoverageResult,
+          gitInsightsResult,
+          securityResult,
+          frameworkResult,
+          depHealthResult,
+        ] = await Promise.all([
+          new TodoScanner().scan(rootDir),
+          new DependencyScanner().scan(rootDir),
+          new CircularDependencyScanner().scan(rootDir),
+          new StructureScanner().scan(rootDir),
+          new ComplexityScanner().scan(rootDir),
+          new DuplicateScanner().scan(rootDir),
+          new DeadExportScanner().scan(rootDir),
+          new TypeSafetyScanner().scan(rootDir),
+          new TestCoverageScanner().scan(rootDir),
+          new GitInsightsScanner().scan(rootDir),
+          new SecurityScanner().scan(rootDir),
+          new FrameworkScanner().scan(rootDir),
+          new DepHealthScanner().scan(rootDir),
+        ]);
 
-        spinner.text = "Analyzing dependencies...";
-        const depScanner = new DependencyScanner();
-        const depResult = await depScanner.scan(rootDir);
-        allFindings.push(...depResult.findings);
+        allFindings.push(
+          ...todoResult.findings,
+          ...depResult.findings,
+          ...circularResult.findings,
+          ...structureResult.findings,
+          ...complexityResult.findings,
+          ...duplicateResult.findings,
+          ...deadExportResult.findings,
+          ...typeSafetyResult.findings,
+          ...testCoverageResult.findings,
+          ...gitInsightsResult.findings,
+          ...securityResult.findings,
+          ...frameworkResult.findings,
+          ...depHealthResult.findings,
+        );
 
-        spinner.text = "Checking for circular dependencies...";
-        const circularScanner = new CircularDependencyScanner();
-        const circularResult = await circularScanner.scan(rootDir);
-        allFindings.push(...circularResult.findings);
-
-        spinner.text = "Analyzing project structure...";
-        const structureScanner = new StructureScanner();
-        const structureResult = await structureScanner.scan(rootDir);
-        allFindings.push(...structureResult.findings);
-
-        spinner.text = "Calculating code complexity...";
-        const complexityScanner = new ComplexityScanner();
-        const complexityResult = await complexityScanner.scan(rootDir);
-        allFindings.push(...complexityResult.findings);
-
-        spinner.text = "Detecting duplicate code...";
-        const duplicateScanner = new DuplicateScanner();
-        const duplicateResult = await duplicateScanner.scan(rootDir);
-        allFindings.push(...duplicateResult.findings);
-
-        spinner.text = "Finding dead exports...";
-        const deadExportScanner = new DeadExportScanner();
-        const deadExportResult = await deadExportScanner.scan(rootDir);
-        allFindings.push(...deadExportResult.findings);
-
-        spinner.text = "Auditing type safety...";
-        const typeSafetyScanner = new TypeSafetyScanner();
-        const typeSafetyResult = await typeSafetyScanner.scan(rootDir);
-        allFindings.push(...typeSafetyResult.findings);
-
-        spinner.text = "Checking test coverage...";
-        const testCoverageScanner = new TestCoverageScanner();
-        const testCoverageResult = await testCoverageScanner.scan(rootDir);
-        allFindings.push(...testCoverageResult.findings);
-
-        spinner.text = "Analyzing git history...";
-        const gitInsightsScanner = new GitInsightsScanner();
-        const gitInsightsResult = await gitInsightsScanner.scan(rootDir);
-        allFindings.push(...gitInsightsResult.findings);
-
-        spinner.text = "Scanning security surface...";
-        const securityScanner = new SecurityScanner();
-        const securityResult = await securityScanner.scan(rootDir);
-        allFindings.push(...securityResult.findings);
-
-        spinner.text = "Checking framework best practices...";
-        const frameworkScanner = new FrameworkScanner();
-        const frameworkResult = await frameworkScanner.scan(rootDir);
-        allFindings.push(...frameworkResult.findings);
-
-        spinner.text = "Auditing dependency health...";
-        const depHealthScanner = new DepHealthScanner();
-        const depHealthResult = await depHealthScanner.scan(rootDir);
-        allFindings.push(...depHealthResult.findings);
-        if ((depHealthResult.stats as { skipped?: boolean })?.skipped) {
-          spinner.text = "Skipping dep health (node_modules not found)...";
-        }
-
-        // Language-specific scanners
+        // Group 2: Language-specific scanners in parallel
+        spinner.text = "Running language-specific scanners...";
         const detectedLanguages = detectProjectLanguage(rootDir, fs);
+        const languageScanPromises: Promise<void>[] = [];
 
         if (detectedLanguages.includes("python")) {
-          spinner.text = "Analyzing Python complexity...";
-          const pyComplexityScanner = new PythonComplexityScanner();
-          const pyComplexityResult = await pyComplexityScanner.scan(rootDir);
-          allFindings.push(...pyComplexityResult.findings);
-
-          spinner.text = "Checking Python type hints...";
-          const pyTypeHintsScanner = new PythonTypeHintsScanner();
-          const pyTypeHintsResult = await pyTypeHintsScanner.scan(rootDir);
-          allFindings.push(...pyTypeHintsResult.findings);
-
-          spinner.text = "Analyzing Python imports...";
-          const pyImportsScanner = new PythonImportsScanner();
-          const pyImportsResult = await pyImportsScanner.scan(rootDir);
-          allFindings.push(...pyImportsResult.findings);
-
-          spinner.text = "Checking Python docstrings...";
-          const pyDocstrings = new PythonDocstringScanner();
-          allFindings.push(...(await pyDocstrings.scan(rootDir)).findings);
-
-          spinner.text = "Detecting Python code smells...";
-          const pySmells = new PythonCodeSmellScanner();
-          allFindings.push(...(await pySmells.scan(rootDir)).findings);
-
-          spinner.text = "Scanning Python security...";
-          const pySecurity = new PythonSecurityScanner();
-          allFindings.push(...(await pySecurity.scan(rootDir)).findings);
-
-          spinner.text = "Analyzing Python class design...";
-          const pyDesign = new PythonClassDesignScanner();
-          allFindings.push(...(await pyDesign.scan(rootDir)).findings);
+          languageScanPromises.push(
+            Promise.all([
+              new PythonComplexityScanner().scan(rootDir),
+              new PythonTypeHintsScanner().scan(rootDir),
+              new PythonImportsScanner().scan(rootDir),
+              new PythonDocstringScanner().scan(rootDir),
+              new PythonCodeSmellScanner().scan(rootDir),
+              new PythonSecurityScanner().scan(rootDir),
+              new PythonClassDesignScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
         }
 
         if (detectedLanguages.includes("go")) {
-          spinner.text = "Analyzing Go complexity...";
-          const goComplexity = new GoComplexityScanner();
-          allFindings.push(...(await goComplexity.scan(rootDir)).findings);
-
-          spinner.text = "Checking Go error handling...";
-          const goErrors = new GoErrorHandlingScanner();
-          allFindings.push(...(await goErrors.scan(rootDir)).findings);
-
-          spinner.text = "Checking Go conventions...";
-          const goLint = new GoLintScanner();
-          allFindings.push(...(await goLint.scan(rootDir)).findings);
+          languageScanPromises.push(
+            Promise.all([
+              new GoComplexityScanner().scan(rootDir),
+              new GoErrorHandlingScanner().scan(rootDir),
+              new GoLintScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
         }
 
         if (detectedLanguages.includes("rust")) {
-          spinner.text = "Analyzing Rust complexity...";
-          const rustComplexity = new RustComplexityScanner();
-          allFindings.push(...(await rustComplexity.scan(rootDir)).findings);
-
-          spinner.text = "Checking Rust unsafe usage...";
-          const rustUnsafe = new RustUnsafeScanner();
-          allFindings.push(...(await rustUnsafe.scan(rootDir)).findings);
-
-          spinner.text = "Running Rust clippy hints...";
-          const rustClippy = new RustClippyHintsScanner();
-          allFindings.push(...(await rustClippy.scan(rootDir)).findings);
+          languageScanPromises.push(
+            Promise.all([
+              new RustComplexityScanner().scan(rootDir),
+              new RustUnsafeScanner().scan(rootDir),
+              new RustClippyHintsScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
         }
 
         if (detectedLanguages.includes("java")) {
-          spinner.text = "Analyzing Java complexity...";
-          const javaComplexity = new JavaComplexityScanner();
-          allFindings.push(...(await javaComplexity.scan(rootDir)).findings);
-
-          spinner.text = "Checking Java code smells...";
-          const javaSmells = new JavaCodeSmellScanner();
-          allFindings.push(...(await javaSmells.scan(rootDir)).findings);
-
-          spinner.text = "Checking Java naming conventions...";
-          const javaNaming = new JavaNamingScanner();
-          allFindings.push(...(await javaNaming.scan(rootDir)).findings);
+          languageScanPromises.push(
+            Promise.all([
+              new JavaComplexityScanner().scan(rootDir),
+              new JavaCodeSmellScanner().scan(rootDir),
+              new JavaNamingScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
         }
 
         if (detectedLanguages.includes("csharp")) {
-          spinner.text = "Analyzing C# complexity...";
-          const csharpComplexity = new CSharpComplexityScanner();
-          allFindings.push(...(await csharpComplexity.scan(rootDir)).findings);
-
-          spinner.text = "Checking C# code smells...";
-          const csharpSmells = new CSharpCodeSmellScanner();
-          allFindings.push(...(await csharpSmells.scan(rootDir)).findings);
-
-          spinner.text = "Checking C# async patterns...";
-          const csharpAsync = new CSharpAsyncScanner();
-          allFindings.push(...(await csharpAsync.scan(rootDir)).findings);
+          languageScanPromises.push(
+            Promise.all([
+              new CSharpComplexityScanner().scan(rootDir),
+              new CSharpCodeSmellScanner().scan(rootDir),
+              new CSharpAsyncScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
         }
+
+        await Promise.all(languageScanPromises);
 
         // Run plugin scanners
         if (pluginScanners.length > 0) {
