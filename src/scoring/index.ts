@@ -81,6 +81,15 @@ export function calculateHealth(findings: Finding[]): HealthScore {
       case "fastapi-issues":
         score += HEALTH_DEDUCTIONS.frameworkViolation;
         break;
+      case "npm-audit":
+        if (finding.severity === "critical") score += -8;
+        else if (finding.severity === "warning") score += -3;
+        else score += -1;
+        break;
+      case "dep-outdated":
+        if (finding.severity === "warning") score += -2;
+        else score += -0.5;
+        break;
     }
   }
 

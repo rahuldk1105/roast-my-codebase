@@ -16,3 +16,4 @@ export { GoComplexityScanner, GoErrorHandlingScanner, GoLintScanner } from "./go
 export { RustComplexityScanner, RustUnsafeScanner, RustClippyHintsScanner } from "./rust.js";
 export { JavaComplexityScanner, JavaCodeSmellScanner, JavaNamingScanner } from "./java.js";
 export { CSharpComplexityScanner, CSharpCodeSmellScanner, CSharpAsyncScanner } from "./csharp.js";
+export { DepHealthScanner } from './dep-health.js';

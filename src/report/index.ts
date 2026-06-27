@@ -8,6 +8,8 @@ export { generateBadgeSvg, saveBadge } from "./badge.js";
 export { renderAsciiGrade, getAsciiGrade } from "./ascii-art.js";
 export { renderMarkdownReport } from "./markdown.js";
 export { renderHtmlReport, saveHtmlReport } from "./html.js";
+export { detectPRContext, postPRComment, formatPRComment } from "./pr-comment.js";
+export { renderSarifReport, saveSarifReport } from "./sarif.js";
 
 export function renderReport(report: RoastReport, options?: { ascii?: boolean }): string {
   const sections: string[] = [];

@@ -37,6 +37,7 @@ import {
   CSharpComplexityScanner,
   CSharpCodeSmellScanner,
   CSharpAsyncScanner,
+  DepHealthScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -51,7 +52,7 @@ import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
 import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
 import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
-import { renderHtmlReport, saveHtmlReport } from "../report/index.js";
+import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment } from "../report/index.js";
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
 
 function loadPackageVersion(): string {
@@ -92,12 +93,15 @@ export function createCli(): Command {
     .option("--html-file", "Save HTML report to .roast-report.html")
     .option("--incremental", "Only analyze files changed since last commit (faster)")
     .option("--since <ref>", "Only analyze files changed since git ref (e.g., main)")
+    .option("--sarif", "Output results as SARIF (for GitHub Code Scanning)")
+    .option("--sarif-file", "Save SARIF results to .roast-results.sarif")
+    .option("--pr-comment", "Post report as GitHub PR comment (uses GITHUB_TOKEN)")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean }) => {
       const rootDir = path.resolve(targetPath);
 
       if (!fs.existsSync(rootDir)) {
@@ -202,6 +206,10 @@ export function createCli(): Command {
         const frameworkResult = await frameworkScanner.scan(scanRootDir);
         allFindings.push(...frameworkResult.findings);
 
+        const depHealthScanner = new DepHealthScanner();
+        const depHealthResult = await depHealthScanner.scan(scanRootDir);
+        allFindings.push(...depHealthResult.findings);
+
         const health = calculateHealth(allFindings);
         return { findings: allFindings, health };
       };
@@ -235,6 +243,7 @@ export function createCli(): Command {
           new GitInsightsScanner(),
           new SecurityScanner(),
           new FrameworkScanner(),
+          new DepHealthScanner(),
           new TypeSafetyScanner(),
         ];
 
@@ -351,6 +360,14 @@ export function createCli(): Command {
         const frameworkScanner = new FrameworkScanner();
         const frameworkResult = await frameworkScanner.scan(rootDir);
         allFindings.push(...frameworkResult.findings);
+
+        spinner.text = "Auditing dependency health...";
+        const depHealthScanner = new DepHealthScanner();
+        const depHealthResult = await depHealthScanner.scan(rootDir);
+        allFindings.push(...depHealthResult.findings);
+        if ((depHealthResult.stats as { skipped?: boolean })?.skipped) {
+          spinner.text = "Skipping dep health (node_modules not found)...";
+        }
 
         // Language-specific scanners
         const detectedLanguages = detectProjectLanguage(rootDir, fs);
@@ -512,7 +529,15 @@ export function createCli(): Command {
         }
 
         // Render
-        if (options.json) {
+        if (options.sarif || options.sarifFile) {
+          const sarifOutput = renderSarifReport(report, rootDir);
+          if (options.sarifFile) {
+            saveSarifReport(sarifOutput, rootDir);
+            console.log(chalk.green("\n✓ SARIF report saved to .roast-results.sarif\n"));
+          } else {
+            console.log(sarifOutput);
+          }
+        } else if (options.json) {
           console.log(renderJsonReport(report));
 
           // Check threshold if provided
@@ -544,6 +569,19 @@ export function createCli(): Command {
         if (options.badge) {
           const badgeSvg = generateBadgeSvg(health);
           saveBadge(badgeSvg, rootDir);
+        }
+
+        // Post PR comment if requested
+        if (options.prComment) {
+          const prConfig = detectPRContext();
+          if (prConfig) {
+            spinner.start("Posting PR comment...");
+            await postPRComment(report, prConfig);
+            spinner.stop();
+            console.log(chalk.green("\n✓ PR comment posted\n"));
+          } else {
+            console.log(chalk.yellow("\n⚠ Could not detect PR context (is GITHUB_TOKEN set?)\n"));
+          }
         }
 
         // Save HTML report if requested

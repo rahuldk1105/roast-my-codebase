@@ -264,6 +264,20 @@ const fastapiIssuesRoasts = [
   "No response_model means no validation, no docs, and no regrets — until there are regrets.",
 ];
 
+const depAuditRoasts = [
+  "Your dependencies have vulnerabilities. Security is just a vibe anyway.",
+  "npm audit called — it's not happy about your life choices.",
+  "CVEs in production: turning 'works on my machine' into 'hacked on your machine'.",
+  "Supply chain attack? More like supply chain welcome mat.",
+];
+
+const depOutdatedRoasts = [
+  "These packages haven't been updated since the last ice age.",
+  "npm outdated: a love letter from the past.",
+  "Your dependencies are aging like milk, not wine.",
+  "These major version upgrades won't do themselves. (They will not, in fact, do themselves.)",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -617,6 +631,16 @@ export async function generateRoasts(
       message: pick(fastapiIssuesRoasts),
       category: "fastapi-issues",
     });
+  }
+
+  const auditFindings = findings.filter(f => f.category === 'npm-audit' && f.severity !== 'info');
+  if (auditFindings.length > 0) {
+    roasts.push({ target: 'dependencies', message: pick(depAuditRoasts), category: 'npm-audit' });
+  }
+
+  const outdatedFindings = findings.filter(f => f.category === 'dep-outdated' && f.severity === 'warning');
+  if (outdatedFindings.length > 0) {
+    roasts.push({ target: 'dependencies', message: pick(depOutdatedRoasts), category: 'dep-outdated' });
   }
 
   return roasts;
