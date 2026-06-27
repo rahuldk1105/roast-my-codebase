@@ -1134,6 +1134,12 @@ export default {
         // Save all report formats to output directory if requested
         if (options.outputDir) {
           const resolvedOutputDir = path.resolve(rootDir, options.outputDir);
+          // Prevent path traversal: output dir must be inside or equal to rootDir
+          const normalizedRoot = path.resolve(rootDir);
+          if (!resolvedOutputDir.startsWith(normalizedRoot + path.sep) && resolvedOutputDir !== normalizedRoot) {
+            console.error(chalk.red(`\nError: --output-dir path "${options.outputDir}" escapes the project directory.\n`));
+            process.exit(1);
+          }
           const outputResult = await saveAllReports(report, resolvedOutputDir, rootDir);
 
           if (outputResult.errors.length === 0) {
@@ -1197,8 +1203,13 @@ export default {
           console.log(renderReport(report, { ascii: options.ascii }));
         }
 
-        // Perf timing output
-        if (options.perf) {
+        // Threshold check for non-JSON modes (--json already handles this above)
+        if (!options.json && options.threshold !== undefined && report.health.score < options.threshold) {
+          process.exit(options.exitCodes ? EXIT_CODES.THRESHOLD_EXCEEDED : EXIT_CODES.GENERIC_FAILURE);
+        }
+
+        // Perf timing output — skip when machine-readable output modes are active
+        if (options.perf && !options.json && !options.sarif && !options.sarifFile && !options.junit && !options.junitFile) {
           console.log(chalk.bold('\n  Scanner Performance\n'));
           console.log(chalk.dim('  ' + '─'.repeat(48)));
 
@@ -1229,8 +1240,8 @@ export default {
           saveBadge(badgeSvg, rootDir);
         }
 
-        // Score breakdown
-        if (options.breakdown) {
+        // Score breakdown — skip when machine-readable output modes are active
+        if (options.breakdown && !options.json && !options.sarif && !options.sarifFile && !options.junit && !options.junitFile) {
           const bd = calculateScoreBreakdown(report.findings, report.health.score);
           if (bd.categories.length === 0) {
             console.log(chalk.green('\n  ✓ No score deductions — clean codebase!\n'));

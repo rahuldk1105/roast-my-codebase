@@ -210,8 +210,11 @@ export class ConfigAuditScanner implements Scanner {
     const extendsStr = JSON.stringify(extendsArr ?? "");
     const pluginsStr = JSON.stringify(pluginsArr ?? "");
 
-    // extends missing
-    if (!extendsArr || (Array.isArray(extendsArr) && extendsArr.length === 0)) {
+    // extends missing — handle string, array, and missing cases
+    const hasExtends = typeof extendsArr === 'string'
+      ? extendsArr.length > 0
+      : Array.isArray(extendsArr) ? extendsArr.length > 0 : false;
+    if (!hasExtends) {
       findings.push({
         id: "config-eslint-no-extends",
         severity: "info",

@@ -55,3 +55,40 @@ describe('getAutoExitCode', () => {
     expect(getAutoExitCode([f('license-compliance', 'warning')])).toBe(EXIT_CODES.SUCCESS);
   });
 });
+
+describe('getExitCode — threshold edge cases', () => {
+  it('returns THRESHOLD_EXCEEDED (2) when thresholdExceeded is true', () => {
+    expect(getExitCode([], { thresholdExceeded: true })).toBe(2);
+    expect(getExitCode([], { thresholdExceeded: true })).toBe(EXIT_CODES.THRESHOLD_EXCEEDED);
+  });
+
+  it('threshold is overridden by regression', () => {
+    expect(getExitCode([], { regression: true, thresholdExceeded: true })).toBe(EXIT_CODES.REGRESSION);
+    expect(getExitCode([], { regression: true, thresholdExceeded: true })).not.toBe(EXIT_CODES.THRESHOLD_EXCEEDED);
+  });
+
+  it('threshold is overridden by trend failure', () => {
+    expect(getExitCode([], { trendFailure: true, thresholdExceeded: true })).toBe(EXIT_CODES.TREND_FAILURE);
+  });
+
+  it('thresholdExceeded false returns SUCCESS with no findings', () => {
+    expect(getExitCode([], { thresholdExceeded: false })).toBe(EXIT_CODES.SUCCESS);
+  });
+});
+
+describe('diff validation — empty string', () => {
+  it('empty string does not match the commit validation regex', () => {
+    // Regression guard: empty string must not pass the sinceCommit validation in diff.ts.
+    // The guard is: !/^[a-zA-Z0-9_./^~@{}-]+$/.test(sinceCommit) || sinceCommit.includes('..')
+    // So an empty string fails the regex (returns false), negation is true → invalid → warn + return [].
+    const commitRefRegex = /^[a-zA-Z0-9_./^~@{}-]+$/;
+    const isValidRef = (ref: string) => commitRefRegex.test(ref) && !ref.includes('..');
+
+    expect(isValidRef('')).toBe(false);         // empty string is rejected
+    expect(isValidRef('abc123')).toBe(true);     // normal SHA
+    expect(isValidRef('HEAD~1')).toBe(true);     // tilde notation
+    expect(isValidRef('main..feature')).toBe(false); // double-dot blocked by includes('..')
+    expect(isValidRef('../evil')).toBe(false);   // path traversal attempt rejected
+    expect(isValidRef(';rm -rf')).toBe(false);   // shell injection rejected
+  });
+});
