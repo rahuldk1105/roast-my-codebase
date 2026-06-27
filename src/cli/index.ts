@@ -59,6 +59,7 @@ import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js"
 import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
 import { checkRegression, formatRegressionOutput } from "../regression/index.js";
 import { installPreCommitHook, uninstallPreCommitHook } from "../hooks/index.js";
+import { loadPlugins } from "../plugins/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -109,12 +110,14 @@ export function createCli(): Command {
     .option("--show-ignored", "Show which patterns are active in .roastignore")
     .option("--hotmap", "Show ASCII directory tree with issue density per folder")
     .option("--hotmap-depth <n>", "Max depth for hotmap tree (default: 4)", parseInt)
+    .option("--list-plugins", "List all configured roast plugins")
+    .option("--init-plugin <name>", "Scaffold a new roast plugin package")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -181,6 +184,57 @@ export function createCli(): Command {
         process.exit(0);
       }
 
+      if (options.initPlugin) {
+        const pluginName = options.initPlugin;
+        const fullName = pluginName.startsWith('roast-plugin-') ? pluginName : `roast-plugin-${pluginName}`;
+        const pluginDir = path.join(rootDir, fullName);
+
+        if (fs.existsSync(pluginDir)) {
+          console.log(chalk.yellow(`\n⚠ Directory ${fullName} already exists.\n`));
+          process.exit(1);
+        }
+
+        fs.mkdirSync(path.join(pluginDir, 'src'), { recursive: true });
+
+        fs.writeFileSync(path.join(pluginDir, 'package.json'), JSON.stringify({
+          name: fullName, version: '0.1.0',
+          description: 'A roast-my-codebase plugin',
+          type: 'module', main: 'dist/index.js',
+          scripts: { build: 'tsc', dev: 'tsc --watch' },
+          peerDependencies: { 'roast-my-codebase': '>=1.0.0' },
+          devDependencies: { typescript: '^5.0.0' }
+        }, null, 2));
+
+        fs.writeFileSync(path.join(pluginDir, 'src', 'index.ts'),
+`import type { Scanner, ScanResult, Finding } from 'roast-my-codebase/types';
+
+export default {
+  name: '${fullName}',
+  version: '0.1.0',
+  scanner: {
+    name: '${fullName}',
+    async scan(rootDir: string): Promise<ScanResult> {
+      const findings: Finding[] = [];
+      // TODO: implement your scanner logic here
+      return { findings };
+    }
+  }
+};
+`);
+
+        fs.writeFileSync(path.join(pluginDir, 'tsconfig.json'), JSON.stringify({
+          compilerOptions: {
+            target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext',
+            outDir: './dist', rootDir: './src', strict: true, declaration: true
+          },
+          include: ['src/**/*']
+        }, null, 2));
+
+        console.log(chalk.green(`\n✓ Plugin scaffolded at ./${fullName}/\n`));
+        console.log(chalk.dim(`  1. cd ${fullName}\n  2. npm install\n  3. npm run build\n  4. Add "${fullName}" to .roastrc.json plugins array\n`));
+        process.exit(0);
+      }
+
       if (!fs.existsSync(rootDir)) {
         console.error(`Error: "${rootDir}" does not exist.`);
         process.exit(1);
@@ -229,8 +283,24 @@ export function createCli(): Command {
         cachePath: config.ai?.cachePath,
       };
 
-      // Load plugins (currently not integrated into scanners array)
-      // const _pluginScanners = await loadPlugins(config, rootDir);
+      const pluginScanners = await loadPlugins(config, rootDir);
+
+      if (options.listPlugins) {
+        const pluginList = config.plugins || [];
+        if (pluginList.length === 0) {
+          console.log(chalk.yellow('\n  No plugins configured.\n'));
+          console.log(chalk.dim('  Add plugins to .roastrc.json: { "plugins": ["roast-plugin-graphql"] }\n'));
+        } else {
+          console.log(chalk.bold('\n  Installed plugins:\n'));
+          for (const name of pluginList) {
+            const loaded = pluginScanners.find(s => s.name === name || s.name.includes(name));
+            const status = loaded ? chalk.green('✓ loaded') : chalk.red('✗ not found');
+            console.log(`  • ${chalk.dim(name)}  ${status}`);
+          }
+          console.log();
+        }
+        process.exit(0);
+      }
 
       // Define scanner function for reuse in comparison mode
       const runScanners = async (scanRootDir: string, ignorePatterns: string[] = []): Promise<{ findings: Finding[]; health: HealthScore }> => {
@@ -292,6 +362,13 @@ export function createCli(): Command {
         const depHealthResult = await depHealthScanner.scan(scanRootDir);
         allFindings.push(...depHealthResult.findings);
 
+        for (const pluginScanner of pluginScanners) {
+          try {
+            const pluginResult = await pluginScanner.scan(scanRootDir);
+            allFindings.push(...pluginResult.findings);
+          } catch { /* skip failed plugins */ }
+        }
+
         const filteredScanFindings = filterIgnoredFindings(allFindings, ignorePatterns, scanRootDir);
         const health = calculateHealth(filteredScanFindings);
         return { findings: filteredScanFindings, health };
@@ -328,6 +405,7 @@ export function createCli(): Command {
           new FrameworkScanner(),
           new DepHealthScanner(),
           new TypeSafetyScanner(),
+          ...pluginScanners,
         ];
 
         const projectName = getProjectName(rootDir);
@@ -542,6 +620,19 @@ export function createCli(): Command {
           spinner.text = "Checking C# async patterns...";
           const csharpAsync = new CSharpAsyncScanner();
           allFindings.push(...(await csharpAsync.scan(rootDir)).findings);
+        }
+
+        // Run plugin scanners
+        if (pluginScanners.length > 0) {
+          for (const pluginScanner of pluginScanners) {
+            spinner.text = `Running plugin: ${pluginScanner.name}...`;
+            try {
+              const pluginResult = await pluginScanner.scan(rootDir);
+              allFindings.push(...pluginResult.findings);
+            } catch (error) {
+              console.warn(`\nWarning: Plugin "${pluginScanner.name}" failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+          }
         }
 
         spinner.stop();
