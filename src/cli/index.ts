@@ -352,6 +352,137 @@ export default {
         process.exit(1);
       }
 
+      if (options.file) {
+        const targetFile = path.resolve(rootDir, options.file);
+
+        if (!fs.existsSync(targetFile)) {
+          console.error(chalk.red(`\nFile not found: ${targetFile}\n`));
+          process.exit(1);
+        }
+
+        if (fs.statSync(targetFile).isDirectory()) {
+          console.error(chalk.red(`\n${options.file} is a directory. Use --file with a specific file.\n`));
+          process.exit(1);
+        }
+
+        console.log('');
+        const fileSpinner = ora({ text: `Scanning ${options.file}...`, spinner: 'dots' }).start();
+
+        const fileAllFindings: Finding[] = [];
+
+        const [
+          fileTodoResult,
+          fileComplexityResult,
+          fileTypeSafetyResult,
+          fileSecurityResult,
+          fileTestQualityResult,
+          fileConfigResult,
+          fileDuplicateResult,
+          fileDeadExportResult,
+        ] = await Promise.all([
+          new TodoScanner().scan(rootDir),
+          new ComplexityScanner().scan(rootDir),
+          new TypeSafetyScanner().scan(rootDir),
+          new SecurityScanner().scan(rootDir),
+          new TestQualityScanner().scan(rootDir),
+          new ConfigAuditScanner().scan(rootDir),
+          new DuplicateScanner().scan(rootDir),
+          new DeadExportScanner().scan(rootDir),
+        ]);
+
+        fileAllFindings.push(
+          ...fileTodoResult.findings,
+          ...fileComplexityResult.findings,
+          ...fileTypeSafetyResult.findings,
+          ...fileSecurityResult.findings,
+          ...fileTestQualityResult.findings,
+          ...fileConfigResult.findings,
+          ...fileDuplicateResult.findings,
+          ...fileDeadExportResult.findings,
+        );
+
+        // Language-specific scanners based on file extension
+        const fileExt = path.extname(targetFile).toLowerCase();
+
+        if (fileExt === '.py') {
+          const pyResults = await Promise.all([
+            new PythonComplexityScanner().scan(rootDir),
+            new PythonTypeHintsScanner().scan(rootDir),
+            new PythonImportsScanner().scan(rootDir),
+            new PythonDocstringScanner().scan(rootDir),
+            new PythonCodeSmellScanner().scan(rootDir),
+            new PythonSecurityScanner().scan(rootDir),
+            new PythonClassDesignScanner().scan(rootDir),
+          ]);
+          fileAllFindings.push(...pyResults.flatMap(r => r.findings));
+        } else if (['.ts', '.tsx', '.js', '.jsx'].includes(fileExt)) {
+          // already covered by core scanners above
+        } else if (fileExt === '.go') {
+          const goResults = await Promise.all([
+            new GoComplexityScanner().scan(rootDir),
+            new GoErrorHandlingScanner().scan(rootDir),
+            new GoLintScanner().scan(rootDir),
+          ]);
+          fileAllFindings.push(...goResults.flatMap(r => r.findings));
+        } else if (fileExt === '.rs') {
+          const rsResults = await Promise.all([
+            new RustComplexityScanner().scan(rootDir),
+            new RustUnsafeScanner().scan(rootDir),
+            new RustClippyHintsScanner().scan(rootDir),
+          ]);
+          fileAllFindings.push(...rsResults.flatMap(r => r.findings));
+        }
+
+        fileSpinner.stop();
+
+        // Filter findings to just this file
+        const relFilePath = path.relative(rootDir, targetFile).replace(/\\/g, '/');
+        const fileFindings = fileAllFindings.filter(f =>
+          f.file && (
+            f.file === relFilePath ||
+            f.file.replace(/\\/g, '/') === relFilePath
+          )
+        );
+
+        // Render per-file report
+        console.log(chalk.bold(`\n  File: ${chalk.cyan(relFilePath)}\n`));
+
+        if (fileFindings.length === 0) {
+          console.log(chalk.green('  ✓ No issues found in this file\n'));
+        } else {
+          const fileCriticals = fileFindings.filter(f => f.severity === 'critical');
+          const fileWarnings = fileFindings.filter(f => f.severity === 'warning');
+          const fileInfos = fileFindings.filter(f => f.severity === 'info');
+
+          console.log(
+            chalk.dim(`  ${fileFindings.length} finding(s): `) +
+            (fileCriticals.length > 0 ? chalk.red(`${fileCriticals.length} critical  `) : '') +
+            (fileWarnings.length > 0 ? chalk.yellow(`${fileWarnings.length} warning  `) : '') +
+            (fileInfos.length > 0 ? chalk.blue(`${fileInfos.length} info`) : '')
+          );
+          console.log(chalk.dim('  ' + '─'.repeat(50)));
+          console.log('');
+
+          const sortedFileFindings = [...fileCriticals, ...fileWarnings, ...fileInfos];
+          for (const finding of sortedFileFindings) {
+            const icon = finding.severity === 'critical' ? chalk.red('✗')
+                       : finding.severity === 'warning' ? chalk.yellow('⚠')
+                       : chalk.blue('ℹ');
+            const cat = chalk.dim(`[${finding.category}]`);
+            console.log(`  ${icon} ${cat} ${finding.message}`);
+            if (finding.detail) {
+              console.log(chalk.dim(`       ${finding.detail}`));
+            }
+            console.log('');
+          }
+        }
+
+        if (fileFindings.some(f => f.severity === 'critical')) {
+          process.exit(1);
+        }
+        process.exit(0);
+      }
+
       // History mode - show historical health data
       if (options.history !== undefined) {
         const history = loadHistory(rootDir);
