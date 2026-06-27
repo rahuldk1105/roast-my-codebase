@@ -74,7 +74,7 @@ import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
 import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
 import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
-import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment, renderJUnitReport, saveJUnitReport, isGitHubActions, writeGitHubStepSummary, saveAllReports } from "../report/index.js";
+import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment, renderJUnitReport, saveJUnitReport, isGitHubActions, writeGitHubStepSummary, saveAllReports, buildFolderTree, renderHotmap } from "../report/index.js";
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
 import { getChangedLineRanges, filterFindingsByChangedLines } from "../incremental/diff.js";
 import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
