@@ -2,6 +2,7 @@ import { Command } from "commander";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { performance } from "perf_hooks";
 import ora from "ora";
 import chalk from "chalk";
 import {
@@ -67,13 +68,15 @@ import { startWatchMode, renderWatchSummary } from "../watch/index.js";
 import { compareWithBranch, renderComparison } from "../compare/index.js";
 import { loadConfig } from "../config/index.js";
 import { loadRoastIgnore, filterIgnoredFindings } from "../utils/files.js";
+import { deduplicateFindings, countDedupedFindings } from "../utils/dedup.js";
 import { buildIgnorePatterns } from "../utils/constants.js";
 import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
 import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
 import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
-import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment, renderJUnitReport, saveJUnitReport } from "../report/index.js";
+import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment, renderJUnitReport, saveJUnitReport, isGitHubActions, writeGitHubStepSummary, saveAllReports } from "../report/index.js";
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
+import { getChangedLineRanges, filterFindingsByChangedLines } from "../incremental/diff.js";
 import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
 import { checkRegression, formatRegressionOutput } from "../regression/index.js";
 import { checkTrendGating, formatTrendResult } from "../trend/index.js";
@@ -83,6 +86,7 @@ import { startDashboard } from "../serve/index.js";
 import { updateReadmeBadge } from "../readme/index.js";
 import { sendNotification, NotifyConfig } from "../notify/index.js";
 import { getExplanation, listCategories, renderExplanation } from "../explain/index.js";
+import { EXIT_CODES, getExitCode, getAutoExitCode } from "../utils/exit-codes.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -122,6 +126,7 @@ export function createCli(): Command {
     .option("--html-file", "Save HTML report to .roast-report.html")
     .option("--incremental", "Only analyze files changed since last commit (faster)")
     .option("--since <ref>", "Only analyze files changed since git ref (e.g., main)")
+    .option("--since-commit <sha>", "Only show findings on lines changed since this commit/ref")
     .option("--sarif", "Output results as SARIF (for GitHub Code Scanning)")
     .option("--sarif-file", "Save SARIF results to .roast-results.sarif")
     .option("--junit", "Output results as JUnit XML (for Jenkins/GitLab/Bitbucket)")
@@ -146,12 +151,15 @@ export function createCli(): Command {
     .option("--notify <url>", "Send report to Slack/Teams/Discord webhook URL")
     .option("--explain [category]", "Explain a finding category (or list all categories)")
     .option("--file <path>", "Scan a single file and show all findings for it")
+    .option("--perf", "Show scanner performance timing after scan")
+    .option("--no-summary", "Disable automatic GitHub Actions step summary")
+    .option("--output-dir <path>", "Save all report formats (JSON, HTML, SARIF, JUnit, Markdown) to a directory")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean; notify?: string; explain?: string | boolean; file?: string }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sinceCommit?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean; notify?: string; explain?: string | boolean; file?: string; perf?: boolean; summary?: boolean; outputDir?: string }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.explain !== undefined) {
@@ -630,7 +638,7 @@ export default {
           } catch { /* skip on error */ }
         }
 
-        const filteredScanFindings = filterIgnoredFindings(allFindings, ignorePatterns, scanRootDir);
+        const filteredScanFindings = deduplicateFindings(filterIgnoredFindings(allFindings, ignorePatterns, scanRootDir));
         const health = calculateHealth(filteredScanFindings);
         return { findings: filteredScanFindings, health };
       };
@@ -723,9 +731,21 @@ export default {
       try {
         const allFindings: Finding[] = [];
 
+        // Perf timing setup
+        const perfTimings = new Map<string, number>();
+        const perfStart = performance.now();
+        const timedScan = options.perf
+          ? async (name: string, fn: () => Promise<any>) => {
+              const t0 = performance.now();
+              const r = await fn();
+              perfTimings.set(name, performance.now() - t0);
+              return r;
+            }
+          : (_name: string, fn: () => Promise<any>) => fn();
+
         // Group 0: FileScanner (need its stats for the report)
         const fileScanner = new FileScanner();
-        const fileResult = await fileScanner.scan(rootDir);
+        const fileResult = await timedScan('files', () => fileScanner.scan(rootDir));
         allFindings.push(...fileResult.findings);
         const stats = fileResult.stats;
 
@@ -751,24 +771,24 @@ export default {
           configAuditResult,
           bundleSizeResult,
         ] = await Promise.all([
-          new TodoScanner().scan(rootDir),
-          new DependencyScanner().scan(rootDir),
-          new CircularDependencyScanner().scan(rootDir),
-          new StructureScanner().scan(rootDir),
-          new ComplexityScanner().scan(rootDir),
-          new DuplicateScanner().scan(rootDir),
-          new DeadExportScanner().scan(rootDir),
-          new TypeSafetyScanner().scan(rootDir),
-          new TestCoverageScanner().scan(rootDir),
-          new GitInsightsScanner().scan(rootDir),
-          new SecurityScanner().scan(rootDir),
-          new FrameworkScanner().scan(rootDir),
-          new DepHealthScanner().scan(rootDir),
-          new TestQualityScanner().scan(rootDir),
-          new LicenseScanner().scan(rootDir),
-          new DatabaseScanner().scan(rootDir),
-          new ConfigAuditScanner().scan(rootDir),
-          new BundleSizeScanner().scan(rootDir),
+          timedScan('todos', () => new TodoScanner().scan(rootDir)),
+          timedScan('dependencies', () => new DependencyScanner().scan(rootDir)),
+          timedScan('circular-deps', () => new CircularDependencyScanner().scan(rootDir)),
+          timedScan('structure', () => new StructureScanner().scan(rootDir)),
+          timedScan('complexity', () => new ComplexityScanner().scan(rootDir)),
+          timedScan('duplicates', () => new DuplicateScanner().scan(rootDir)),
+          timedScan('dead-exports', () => new DeadExportScanner().scan(rootDir)),
+          timedScan('type-safety', () => new TypeSafetyScanner().scan(rootDir)),
+          timedScan('test-coverage', () => new TestCoverageScanner().scan(rootDir)),
+          timedScan('git-insights', () => new GitInsightsScanner().scan(rootDir)),
+          timedScan('security', () => new SecurityScanner().scan(rootDir)),
+          timedScan('framework', () => new FrameworkScanner().scan(rootDir)),
+          timedScan('dep-health', () => new DepHealthScanner().scan(rootDir)),
+          timedScan('test-quality', () => new TestQualityScanner().scan(rootDir)),
+          timedScan('license', () => new LicenseScanner().scan(rootDir)),
+          timedScan('database', () => new DatabaseScanner().scan(rootDir)),
+          timedScan('config-audit', () => new ConfigAuditScanner().scan(rootDir)),
+          timedScan('bundle-size', () => new BundleSizeScanner().scan(rootDir)),
         ]);
 
         allFindings.push(
@@ -909,7 +929,9 @@ export default {
           );
         }
 
+        const langStart = performance.now();
         await Promise.all(languageScanPromises);
+        if (options.perf) perfTimings.set('language-scanners', performance.now() - langStart);
 
         // Run plugin scanners
         if (pluginScanners.length > 0) {
@@ -936,9 +958,17 @@ export default {
         }
 
         spinner.stop();
+        if (options.perf) perfTimings.set('total', performance.now() - perfStart);
 
         // Apply .roastignore / config ignore filtering
-        const ignoredFilteredFindings = filterIgnoredFindings(allFindings, [...configIgnorePatterns, ...roastIgnorePatterns], rootDir);
+        const ignoredFilteredFindings = deduplicateFindings(
+          filterIgnoredFindings(allFindings, [...configIgnorePatterns, ...roastIgnorePatterns], rootDir)
+        );
+
+        const dedupedCount = countDedupedFindings(allFindings, ignoredFilteredFindings);
+        if (dedupedCount > 0) {
+          // Will be shown in perf/verbose mode only — don't clutter normal output
+        }
 
         // Calculate health
         const health = calculateHealth(ignoredFilteredFindings);
@@ -1084,6 +1114,27 @@ export default {
           return; // keep process alive — server stays running
         }
 
+        // Save all report formats to output directory if requested
+        if (options.outputDir) {
+          const resolvedOutputDir = path.resolve(rootDir, options.outputDir);
+          const outputResult = await saveAllReports(report, resolvedOutputDir, rootDir);
+
+          if (outputResult.errors.length === 0) {
+            console.log(chalk.green(`\n✓ Reports saved to ${options.outputDir}/\n`));
+            for (const file of outputResult.files) {
+              console.log(chalk.dim(`  ${path.basename(file)}`));
+            }
+            console.log();
+          } else {
+            console.log(chalk.yellow(`\n⚠ Some reports failed to save:\n`));
+            for (const err of outputResult.errors) {
+              console.log(chalk.dim(`  ${err}`));
+            }
+            console.log();
+          }
+          // Still fall through to render the terminal report
+        }
+
         // Render
         if (options.junit || options.junitFile) {
           const junitOutput = renderJUnitReport(report, rootDir);
@@ -1129,10 +1180,41 @@ export default {
           console.log(renderReport(report, { ascii: options.ascii }));
         }
 
+        // Perf timing output
+        if (options.perf) {
+          console.log(chalk.bold('\n  Scanner Performance\n'));
+          console.log(chalk.dim('  ' + '─'.repeat(48)));
+
+          const sortedTimings = [...perfTimings.entries()]
+            .filter(([name]) => name !== 'total')
+            .sort((a, b) => b[1] - a[1]);
+
+          const maxMs = sortedTimings[0]?.[1] ?? 1;
+
+          for (const [name, ms] of sortedTimings) {
+            const barLen = Math.max(1, Math.round((ms / maxMs) * 20));
+            const bar = '█'.repeat(barLen).padEnd(20, '░');
+            const msStr = ms < 1 ? '<1ms' : `${Math.round(ms)}ms`;
+            const color = ms > 1000 ? chalk.red : ms > 300 ? chalk.yellow : chalk.dim;
+            console.log(`  ${color(bar)} ${name.padEnd(22)} ${color(msStr)}`);
+          }
+
+          const total = perfTimings.get('total');
+          if (total) {
+            console.log(chalk.dim('  ' + '─'.repeat(48)));
+            console.log(chalk.dim(`  Total: ${Math.round(total)}ms\n`));
+          }
+        }
+
         // Generate badge if requested
         if (options.badge) {
           const badgeSvg = generateBadgeSvg(health);
           saveBadge(badgeSvg, rootDir);
+        }
+
+        // GitHub Actions step summary (auto-enabled in CI)
+        if (options.summary !== false && isGitHubActions()) {
+          writeGitHubStepSummary(report);
         }
 
         // Update README badge if requested
