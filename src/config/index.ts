@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { validateConfig, safeJsonParse } from "./validation.js";
+import { CustomRule } from "../types/index.js";
 
 export interface RoastConfig {
   // Thresholds
@@ -39,6 +40,9 @@ export interface RoastConfig {
     cacheEnabled?: boolean;
     cachePath?: string;
   };
+
+  // Custom lint rules
+  rules?: CustomRule[];
 }
 
 const DEFAULT_CONFIG: RoastConfig = {
@@ -56,6 +60,7 @@ const DEFAULT_CONFIG: RoastConfig = {
   ignore: [],
   deductions: {},
   plugins: [],
+  rules: [],
 };
 
 export function loadConfig(rootDir: string): RoastConfig {
@@ -103,6 +108,7 @@ export function loadConfig(rootDir: string): RoastConfig {
         ...(DEFAULT_CONFIG.plugins || []),
         ...(userConfig.plugins || []),
       ],
+      rules: [...(DEFAULT_CONFIG.rules || []), ...(userConfig.rules || [])],
     };
   } catch (error) {
     console.warn(`Warning: Failed to load .roastrc.json: ${error instanceof Error ? error.message.replace(/[A-Z]:\\[^\s"']+|\/[^\s"']+/g, '<path>') : 'unknown error'}`);

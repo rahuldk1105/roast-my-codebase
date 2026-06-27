@@ -3,6 +3,7 @@
  */
 
 import { RoastConfig } from "./index.js";
+import { CustomRule } from "../types/index.js";
 
 /**
  * Validates and sanitizes user configuration to prevent prototype pollution
@@ -119,6 +120,42 @@ export function validateConfig(userConfig: unknown): Partial<RoastConfig> {
 
     if ("cachePath" in ai && typeof ai.cachePath === "string") {
       validated.ai.cachePath = ai.cachePath;
+    }
+  }
+
+  // Validate custom rules
+  if ("rules" in config && Array.isArray(config.rules)) {
+    validated.rules = [];
+    for (const rule of config.rules) {
+      if (typeof rule !== "object" || rule === null) continue;
+      const r = rule as Record<string, unknown>;
+
+      // Required fields
+      if (typeof r.id !== "string" || !r.id.match(/^[a-zA-Z0-9_-]+$/)) continue;
+      if (typeof r.name !== "string" || r.name.length > 200) continue;
+      if (typeof r.pattern !== "string" || r.pattern.length > 500) continue;
+      if (!["critical", "warning", "info"].includes(r.severity as string)) continue;
+      if (typeof r.message !== "string" || r.message.length > 500) continue;
+
+      // Optional fields
+      const validated_rule: CustomRule = {
+        id: r.id,
+        name: r.name,
+        pattern: r.pattern,
+        severity: r.severity as "critical" | "warning" | "info",
+        message: r.message,
+      };
+
+      if (typeof r.filePattern === "string") validated_rule.filePattern = r.filePattern;
+      if (Array.isArray(r.exclude)) validated_rule.exclude = r.exclude.filter((e: unknown) => typeof e === "string") as string[];
+      if (typeof r.maxPerFile === "number" && r.maxPerFile > 0 && r.maxPerFile <= 100) {
+        validated_rule.maxPerFile = r.maxPerFile;
+      }
+      if (typeof r.category === "string" && r.category.match(/^[a-zA-Z0-9_-]+$/)) {
+        validated_rule.category = r.category;
+      }
+
+      validated.rules!.push(validated_rule);
     }
   }
 

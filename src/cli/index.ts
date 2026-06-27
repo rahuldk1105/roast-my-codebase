@@ -51,6 +51,7 @@ import {
   KotlinCodeSmellScanner,
   KotlinCoroutineScanner,
   TestQualityScanner,
+  CustomRulesScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -316,6 +317,9 @@ export default {
       };
 
       const pluginScanners = await loadPlugins(config, rootDir);
+      const customRulesScanner = config.rules && config.rules.length > 0
+        ? new CustomRulesScanner(config.rules)
+        : null;
 
       if (options.listPlugins) {
         const pluginList = config.plugins || [];
@@ -401,6 +405,14 @@ export default {
           } catch { /* skip failed plugins */ }
         }
 
+        // Custom rules scanner
+        if (customRulesScanner) {
+          try {
+            const customResult = await customRulesScanner.scan(scanRootDir);
+            allFindings.push(...customResult.findings);
+          } catch { /* skip on error */ }
+        }
+
         const filteredScanFindings = filterIgnoredFindings(allFindings, ignorePatterns, scanRootDir);
         const health = calculateHealth(filteredScanFindings);
         return { findings: filteredScanFindings, health };
@@ -439,6 +451,7 @@ export default {
           new TypeSafetyScanner(),
           new TestQualityScanner(),
           ...pluginScanners,
+          ...(customRulesScanner ? [customRulesScanner] : []),
         ];
 
         const projectName = getProjectName(rootDir);
@@ -675,6 +688,17 @@ export default {
             } catch (error) {
               console.warn(`\nWarning: Plugin "${pluginScanner.name}" failed: ${error instanceof Error ? error.message : String(error)}`);
             }
+          }
+        }
+
+        // Run custom rules scanner
+        if (customRulesScanner) {
+          spinner.text = "Running custom rules...";
+          try {
+            const customResult = await customRulesScanner.scan(rootDir);
+            allFindings.push(...customResult.findings);
+          } catch (error) {
+            console.warn(`\nWarning: Custom rules scanner failed: ${error instanceof Error ? error.message : String(error)}`);
           }
         }
 

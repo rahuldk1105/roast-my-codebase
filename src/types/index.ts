@@ -1,5 +1,30 @@
 export type Severity = "info" | "warning" | "critical";
 
+/**
+ * Custom lint rule defined in .roastrc.json
+ * Example:
+ * {
+ *   "id": "no-console",
+ *   "name": "No console.log in source",
+ *   "pattern": "console\\.log\\(",
+ *   "severity": "warning",
+ *   "message": "console.log in {file} — use a logger",
+ *   "filePattern": "src/**\/*.ts",
+ *   "maxPerFile": 3
+ * }
+ */
+export interface CustomRule {
+  id: string;                          // unique ID, e.g. "no-console"
+  name: string;                        // human-readable name
+  pattern: string;                     // regex string to match against file content
+  severity: "critical" | "warning" | "info";
+  message: string;                     // displayed in findings, supports {file} and {line} placeholders
+  filePattern?: string;                // glob to filter which files to scan, e.g. "**/*.ts"
+  exclude?: string[];                  // glob patterns to exclude
+  maxPerFile?: number;                 // max findings per file (default: 1)
+  category?: string;                   // defaults to "custom-rule"
+}
+
 export interface Finding {
   id: string;
   severity: Severity;
