@@ -350,7 +350,7 @@ const pythonImportRoasts = [
   "from module import * — the programming equivalent of 'throw everything in and hope.'",
 ];
 
-const pythonComplexityRoasts = [
+const _pythonComplexityRoasts = [
   "This Python function has more branches than a bank.",
   "Cyclomatic complexity this high should come with a map.",
   "This function is so complex it filed for its own ZIP code.",
@@ -638,7 +638,7 @@ export function generateOpeningLine(score: number, totalFindings: number): strin
 /**
  * Get roast message - AI if available, otherwise predefined
  */
-function getRoastMessage(
+function _getRoastMessage(
   finding: Finding,
   aiRoasts: Map<string, string>,
   fallbackArray: string[]
@@ -670,7 +670,7 @@ export async function generateRoasts(
         aiConfig,
         rootDir
       );
-    } catch (error) {
+    } catch {
       console.warn("Warning: AI roast generation failed, using predefined roasts");
     }
   }

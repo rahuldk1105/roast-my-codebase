@@ -25,7 +25,7 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
-function escapeJs(text: string): string {
+function _escapeJs(text: string): string {
   return text
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "\\'")
@@ -831,9 +831,9 @@ export function startDashboard(
   options?: { watch?: boolean; rootDir?: string; rescan?: () => Promise<RoastReport> }
 ): http.Server {
   // Mutable state — updated on each rescan
-  let currentReport = report;
+  let _currentReport = report;
   let currentHtml = generateDashboardHtml(report);
-  let currentReportJson = JSON.stringify(report);
+  let _currentReportJson = JSON.stringify(report);
 
   // SSE client management
   const sseClients = new Set<http.ServerResponse>();
@@ -873,9 +873,9 @@ export function startDashboard(
         isRescanning = true;
         broadcast({ type: 'scanning', file: 'manual' });
         options.rescan().then(newReport => {
-          currentReport = newReport;
+          _currentReport = newReport;
           currentHtml = generateDashboardHtml(newReport);
-          currentReportJson = JSON.stringify(newReport);
+          _currentReportJson = JSON.stringify(newReport);
           broadcast({ type: 'update', report: newReport });
           isRescanning = false;
         }).catch(() => {
@@ -891,7 +891,7 @@ export function startDashboard(
       res.end(currentHtml);
     } else if (req.method === 'GET' && url === '/api/report') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(currentReportJson);
+      res.end(_currentReportJson);
     } else if (req.method === 'GET' && url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end('{"ok":true}');
@@ -948,14 +948,14 @@ export function startDashboard(
             try {
               const newReport = await options.rescan!();
               // Update the stored report and regenerated HTML
-              currentReport = newReport;
+              _currentReport = newReport;
               currentHtml = generateDashboardHtml(newReport);
-              currentReportJson = JSON.stringify(newReport);
+              _currentReportJson = JSON.stringify(newReport);
 
               // Push full update to all SSE clients
               broadcast({ type: 'update', report: newReport });
               console.log(`  ↻ Dashboard updated (${changedPath})`);
-            } catch (err) {
+            } catch {
               broadcast({ type: 'error', message: 'Rescan failed' });
             } finally {
               isRescanning = false;

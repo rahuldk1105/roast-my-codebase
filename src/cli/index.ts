@@ -60,7 +60,7 @@ import {
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
-import { generateRoasts, generateVerdict, generateContextualVerdict } from "../roasts/index.js";
+import { generateRoasts, generateContextualVerdict } from "../roasts/index.js";
 import { renderReport, renderJsonReport, renderMarkdownReport, generateBadgeSvg, saveBadge, calculateScoreBreakdown } from "../report/index.js";
 import { Finding, RoastReport, Scanner, HealthScore } from "../types/index.js";
 import { generateFixSuggestions } from "../fixes/index.js";
@@ -86,7 +86,7 @@ import { startDashboard } from "../serve/index.js";
 import { updateReadmeBadge } from "../readme/index.js";
 import { sendNotification, NotifyConfig } from "../notify/index.js";
 import { getExplanation, listCategories, renderExplanation } from "../explain/index.js";
-import { EXIT_CODES, getExitCode, getAutoExitCode } from "../utils/exit-codes.js";
+import { EXIT_CODES } from "../utils/exit-codes.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);

@@ -28,7 +28,7 @@ export class FrameworkScanner implements Scanner {
         isAngular = !!(pkg.dependencies?.["@angular/core"] || pkg.devDependencies?.["@angular/core"]);
         isSvelte = !!(pkg.dependencies?.svelte || pkg.devDependencies?.svelte);
         isExpress = !!(pkg.dependencies?.express || pkg.devDependencies?.express);
-      } catch (error) {
+      } catch {
         // Invalid package.json, skip framework checks
         return { findings: [], stats: { isNextJS: false, isReact: false } };
       }
@@ -44,7 +44,7 @@ export class FrameworkScanner implements Scanner {
         if (content.toLowerCase().includes("fastapi")) {
           isFastAPI = true;
         }
-      } catch (error) {
+      } catch {
         // skip
       }
     }
@@ -54,7 +54,7 @@ export class FrameworkScanner implements Scanner {
         if (content.toLowerCase().includes("fastapi")) {
           isFastAPI = true;
         }
-      } catch (error) {
+      } catch {
         // skip
       }
     }
@@ -91,7 +91,7 @@ export class FrameworkScanner implements Scanner {
               file: rel,
             });
           }
-        } catch (error) {
+        } catch {
           // Skip files that can't be read
           continue;
         }
@@ -126,7 +126,7 @@ export class FrameworkScanner implements Scanner {
               });
             }
           }
-        } catch (error) {
+        } catch {
           // Skip files that can't be read
           continue;
         }
@@ -169,7 +169,7 @@ export class FrameworkScanner implements Scanner {
                 file: rel,
               });
             }
-          } catch (error) {
+          } catch {
             // Skip files that can't be read
             continue;
           }
@@ -230,7 +230,7 @@ export class FrameworkScanner implements Scanner {
               file: rel,
             });
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -283,7 +283,7 @@ export class FrameworkScanner implements Scanner {
               file: rel,
             });
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -328,7 +328,7 @@ export class FrameworkScanner implements Scanner {
               });
             }
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -359,7 +359,7 @@ export class FrameworkScanner implements Scanner {
           if (/app\.(get|post|put|delete|patch)\s*\(/.test(content)) {
             routeFiles.push(filePath);
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -383,7 +383,7 @@ export class FrameworkScanner implements Scanner {
             hasRateLimit = true;
             break;
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -411,7 +411,7 @@ export class FrameworkScanner implements Scanner {
               file: rel,
             });
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -481,7 +481,7 @@ export class FrameworkScanner implements Scanner {
               break;
             }
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }

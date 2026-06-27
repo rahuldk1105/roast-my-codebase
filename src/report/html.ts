@@ -17,11 +17,11 @@ function getScoreColor(score: number): string {
   return "#f85149";
 }
 
-function getGradeColor(score: number): string {
+function _getGradeColor(score: number): string {
   return getScoreColor(score);
 }
 
-function getSeverityColor(severity: string): string {
+function _getSeverityColor(severity: string): string {
   switch (severity) {
     case "critical": return "#f85149";
     case "warning": return "#e3b341";
@@ -30,7 +30,7 @@ function getSeverityColor(severity: string): string {
   }
 }
 
-function getSeverityBg(severity: string): string {
+function _getSeverityBg(severity: string): string {
   switch (severity) {
     case "critical": return "rgba(248, 81, 73, 0.15)";
     case "warning": return "rgba(227, 179, 65, 0.15)";
@@ -144,7 +144,7 @@ function renderRoastCards(report: RoastReport): string {
     </section>`;
 }
 
-function renderFindingsTable(findings: Finding[]): string {
+function _renderFindingsTable(findings: Finding[]): string {
   if (findings.length === 0) {
     return `
       <section class="section">

@@ -3,8 +3,7 @@
   "displayName": "Roast My Codebase",
   "description": "Get roasted. Get better. Ship faster.",
   "version": "0.1.0",
-  "publisher": "roast-my-codebase",
-  "icon": "icon.png",
+  "publisher": "rahuldk",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -150,10 +149,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/roast-my-codebase.git"
+    "url": "https://github.com/rahuldk1105/roast-my-codebase.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/roast-my-codebase/issues"
+    "url": "https://github.com/rahuldk1105/roast-my-codebase/issues"
   },
   "license": "MIT"
 }

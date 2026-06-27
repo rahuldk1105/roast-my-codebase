@@ -66,7 +66,7 @@ export class TestQualityScanner implements Scanner {
 
       // --- Check 9: Test file with no tests ---
       // Recognise plain calls and method calls like it.skip / it.only / test.skip / test.only
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const hasTestCalls = /\bit[\s.[(]|\btest[\s.[(]|\bdescribe[\s.[(]/.test(content);
       if (!hasTestCalls) {
         findings.push({
@@ -83,9 +83,9 @@ export class TestQualityScanner implements Scanner {
       // Match patterns like: describe('name', () => {}) or it('name', () => {})
       // The empty body can be in the arrow function: it('foo', () => {})
       // Also matches: describe('name') {} style (less common)
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const emptyArrowBlockRe = /\b(?:describe|it|test)(?:\.skip|\.only)?\s*\([^)]*\)\s*=>\s*\{\s*\}/g;
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const emptyCallbackRe = /\b(?:describe|it|test)(?:\.skip|\.only)?\s*\(\s*['"`][^'"`]*['"`]\s*,\s*\(\s*\)\s*\{\s*\}\s*\)/g;
 
       const emptyMatches =
@@ -103,9 +103,9 @@ export class TestQualityScanner implements Scanner {
       }
 
       // --- Check 2: No assertions ratio ---
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const itCount = (content.match(/\bit\s*\(/g) || []).length;
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const testCount = (content.match(/\btest\s*\(/g) || []).length;
       const totalTestCount = itCount + testCount;
 
@@ -128,7 +128,7 @@ export class TestQualityScanner implements Scanner {
 
       // --- Check 3: Always-true assertions ---
       // Use nonCommentLines so patterns inside // comments don't trigger false positives.
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const alwaysTruePatterns = [
         /expect\s*\(\s*true\s*\)\s*\.\s*toBe\s*\(\s*true\s*\)/,
         /expect\s*\(\s*1\s*\)\s*\.\s*toBe\s*\(\s*1\s*\)/,
@@ -136,14 +136,14 @@ export class TestQualityScanner implements Scanner {
       ];
 
       // Check for identical string comparisons: expect('foo').toBe('foo')
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const stringSelfCompare = /expect\s*\(\s*(['"])([^'"]+)\1\s*\)\s*\.\s*toBe\s*\(\s*(['"])([^'"]+)\3\s*\)/g;
       let strMatch: RegExpExecArray | null;
       let hasAlwaysTrue = alwaysTruePatterns.some((re) => re.test(nonCommentLines));
 
       if (!hasAlwaysTrue) {
         stringSelfCompare.lastIndex = 0;
-        // eslint-disable-next-line no-cond-assign
+         
         while ((strMatch = stringSelfCompare.exec(nonCommentLines)) !== null) {
           if (strMatch[2] === strMatch[4]) {
             hasAlwaysTrue = true;
@@ -164,7 +164,7 @@ export class TestQualityScanner implements Scanner {
 
       // --- Check 4: Skipped tests (count for project-level finding) ---
       // Use nonCommentLines so commented-out it.skip() calls don't inflate the count.
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const skipPatterns = [
         /\bit\.skip\s*\(/g,
         /\btest\.skip\s*\(/g,
@@ -189,7 +189,7 @@ export class TestQualityScanner implements Scanner {
       }
 
       // --- Check 6: Focused tests (.only) ---
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const onlyPatterns = [
         /\bit\.only\s*\(/g,
         /\btest\.only\s*\(/g,
@@ -213,7 +213,7 @@ export class TestQualityScanner implements Scanner {
       }
 
       // --- Check 7: Hardcoded sleep/wait ---
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const sleepPatterns = [
         /setTimeout\s*\(.*\d{3,}/,
         /\bsleep\s*\(\d+\)/,
@@ -231,17 +231,17 @@ export class TestQualityScanner implements Scanner {
       }
 
       // --- Check 8: Collect test description strings for copy-paste detection ---
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const descRe = /\b(?:it|test)\s*\(\s*(['"`])((?:(?!\1).)+)\1/g;
       let descMatch: RegExpExecArray | null;
-      // eslint-disable-next-line no-cond-assign
+       
       while ((descMatch = descRe.exec(content)) !== null) {
         const desc = descMatch[2];
         descriptionCounts.set(desc, (descriptionCounts.get(desc) ?? 0) + 1);
       }
 
       // --- Check 10: Snapshot tests without update strategy ---
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const snapshotCount =
         (content.match(/\btoMatchSnapshot\s*\(\s*\)/g) || []).length +
         (content.match(/\btoMatchInlineSnapshot\s*\(/g) || []).length;

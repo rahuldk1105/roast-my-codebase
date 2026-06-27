@@ -2,7 +2,7 @@
  * Interactive mode - Walk users through fixing issues one by one
  */
 
-import { confirm, select, input } from "@inquirer/prompts";
+import { confirm, select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { Finding, RoastReport } from "../types/index.js";
 import { applyAutoFix } from "./fixes.js";

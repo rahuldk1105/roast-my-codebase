@@ -248,7 +248,7 @@ function cacheRoast(
     }
 
     fs.writeFileSync(cacheFile, JSON.stringify(cache, null, 2), "utf-8");
-  } catch (error) {
+  } catch {
     // Silently fail - caching is not critical
   }
 }

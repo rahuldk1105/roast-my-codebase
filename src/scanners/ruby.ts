@@ -150,7 +150,7 @@ export class RubyCodeSmellScanner implements Scanner {
         }
 
         // String interpolation in SQL
-        // eslint-disable-next-line security/detect-unsafe-regex
+         
         const sqlInterpolation = content.match(/(?:where|find_by_sql|execute)\s*\(?\s*["'][^"']*#\{/gi);
         if (sqlInterpolation && sqlInterpolation.length > 0) {
           findings.push({

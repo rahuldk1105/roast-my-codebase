@@ -7,7 +7,7 @@ import { SOURCE_EXTENSIONS, IGNORE_PATTERNS,
 import { relativePath } from "../utils/files.js";
 
 const WINDOW_SIZE = 6;
-const MIN_DUPLICATE_LINES = 6;
+const _MIN_DUPLICATE_LINES = 6;
 
 interface DuplicateLocation {
   file: string;
@@ -66,7 +66,7 @@ export class DuplicateScanner implements Scanner {
       blockSize: number;
     }> = [];
 
-    for (const [hash, locations] of hashMap) {
+    for (const [_hash, locations] of hashMap) {
       if (locations.length < 2) continue;
 
       // Check if locations are in different files or far apart in same file
@@ -162,9 +162,9 @@ export class DuplicateScanner implements Scanner {
   }
 
   private calculateBlockSize(
-    locations: DuplicateLocation[],
-    files: string[],
-    rootDir: string
+    _locations: DuplicateLocation[],
+    _files: string[],
+    _rootDir: string
   ): number {
     // For simplicity, return WINDOW_SIZE
     // In a real implementation, we'd extend forward/backward to find the full block

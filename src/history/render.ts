@@ -3,7 +3,7 @@
  */
 
 import chalk from "chalk";
-import { HealthHistory, TrendAnalysis, HealthSnapshot, analyzeTrend, generateTrendChart, getCategoryTrends } from "./index.js";
+import { HealthHistory, analyzeTrend, generateTrendChart, getCategoryTrends } from "./index.js";
 
 /**
  * Render complete history report

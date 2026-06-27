@@ -311,11 +311,11 @@ describe("startDashboard", () => {
 
   it("POST /rescan returns 202 when rescan option is provided", async () => {
     const port = pickPort();
-    let rescanCalled = false;
+    let _rescanCalled = false;
     const server = startDashboard(mockReport, port, {
       watch: false,
       rescan: async () => {
-        rescanCalled = true;
+        _rescanCalled = true;
         return mockReport;
       },
     });

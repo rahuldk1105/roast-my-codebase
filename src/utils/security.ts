@@ -203,7 +203,7 @@ export async function safeRegexMatch(
       finished = true;
       clearTimeout(timeoutId);
       resolve(result);
-    } catch (error) {
+    } catch {
       finished = true;
       clearTimeout(timeoutId);
       resolve(null);

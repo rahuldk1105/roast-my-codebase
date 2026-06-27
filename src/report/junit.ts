@@ -1,5 +1,4 @@
 import fs from "fs";
-import path from "path";
 import { RoastReport, Finding } from "../types/index.js";
 import { validateOutputPath } from "../utils/security.js";
 

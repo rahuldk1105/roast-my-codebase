@@ -143,7 +143,7 @@ export class PythonTypeHintsScanner implements Scanner {
     for (const file of files) {
       try {
         const content = fs.readFileSync(file, "utf-8");
-        const rel = relativePath(rootDir, file);
+        const _rel = relativePath(rootDir, file);
 
         // Find function definitions
         // eslint-disable-next-line security/detect-unsafe-regex

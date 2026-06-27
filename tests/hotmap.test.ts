@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFolderTree, renderHotmap, FolderNode } from "../src/report/hotmap.js";
+import { buildFolderTree, renderHotmap } from "../src/report/hotmap.js";
 import { Finding } from "../src/types/index.js";
 
 const ROOT_DIR = "/home/user/my-project";

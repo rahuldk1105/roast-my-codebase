@@ -170,7 +170,7 @@ function renderFolderSuffix(node: FolderNode): string {
   return issuesPart + bar;
 }
 
-function renderFileSuffix(findings: Finding[]): string {
+function _renderFileSuffix(findings: Finding[]): string {
   const criticals = findings.filter((f) => f.severity === "critical").length;
   const warnings = findings.filter((f) => f.severity === "warning").length;
   const infos = findings.filter((f) => f.severity === "info").length;

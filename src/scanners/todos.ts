@@ -5,7 +5,7 @@ import { SOURCE_EXTENSIONS, IGNORE_PATTERNS,
 } from "../utils/constants.js";
 import { readFileLines, relativePath } from "../utils/files.js";
 
-const TODO_PATTERNS = [/\bTODO\b/, /\bFIXME\b/, /\bHACK\b/, /\bXXX\b/];
+const _TODO_PATTERNS = [/\bTODO\b/, /\bFIXME\b/, /\bHACK\b/, /\bXXX\b/];
 
 export class TodoScanner implements Scanner {
   name = "todos";
@@ -27,7 +27,7 @@ export class TodoScanner implements Scanner {
 
     for (const file of files) {
       const lines = readFileLines(file);
-      const rel = relativePath(rootDir, file);
+      const _rel = relativePath(rootDir, file);
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];

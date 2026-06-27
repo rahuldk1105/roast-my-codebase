@@ -64,7 +64,7 @@ export class PHPComplexityScanner implements Scanner {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const funcMatch = line.match(/(?:function|public|private|protected|static)\s+function\s+(\w+)/);
 
       if (funcMatch) {
@@ -135,7 +135,7 @@ export class PHPSecurityScanner implements Scanner {
         const isTestFile = /(?:test|spec)/i.test(rel);
 
         // $_GET/$_POST directly in SQL query
-        // eslint-disable-next-line security/detect-unsafe-regex
+         
         const sqlInjection = content.match(/(?:mysql_query|mysqli_query|PDO.*query)\s*\(\s*["'][^"']*\$_(?:GET|POST|REQUEST)/gi);
         if (sqlInjection && sqlInjection.length > 0) {
           findings.push({
@@ -191,7 +191,7 @@ export class PHPSecurityScanner implements Scanner {
         }
 
         // MD5 for passwords
-        // eslint-disable-next-line security/detect-unsafe-regex
+         
         const md5Password = content.match(/md5\s*\(\s*\$(?:pass|password|pwd)/gi);
         if (md5Password && md5Password.length > 0) {
           findings.push({
@@ -256,7 +256,7 @@ export class PHPCodeSmellScanner implements Scanner {
         }
 
         // Long parameter lists
-        // eslint-disable-next-line security/detect-unsafe-regex
+         
         const longParams = content.match(/function\s+\w+\s*\([^)]{200,}\)/g);
         if (longParams && longParams.length > 0) {
           findings.push({

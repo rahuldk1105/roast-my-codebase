@@ -232,7 +232,7 @@ describe("checkTrendGating — scores array", () => {
 
 describe("formatTrendResult", () => {
   it("returns string containing ✗ for a failure", () => {
-    const result = checkTrendGating.length; // just to reference module (no-op)
+    const _result = checkTrendGating.length; // just to reference module (no-op)
     const failResult = {
       shouldFail: true,
       consecutiveDrops: 3,

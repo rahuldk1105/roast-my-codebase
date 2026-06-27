@@ -214,7 +214,7 @@ export function safeJsonParse(content: string): unknown {
     }
 
     return parsed;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }

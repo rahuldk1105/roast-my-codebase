@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import path from 'path';
 
 describe('--file path normalization', () => {
   it('normalizes backslashes to forward slashes', () => {
