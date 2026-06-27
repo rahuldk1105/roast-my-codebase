@@ -331,6 +331,13 @@ const configAuditRoasts = [
   "No Prettier config. Every file has its own formatting style. Delightful.",
 ];
 
+const bundleSizeRoasts = [
+  "Your bundle grew 50%. Hope your users enjoy buffering.",
+  "This bundle is so big it needs its own loading screen.",
+  "Bundle size regression detected. Time to blame that one npm install.",
+  "Your JavaScript bundle is now larger than some operating systems.",
+];
+
 const licenseRoasts = [
   "GPL in your dependency tree: open source whether you like it or not.",
   "AGPL: the license that says 'if you use this, you owe the world your code'.",
