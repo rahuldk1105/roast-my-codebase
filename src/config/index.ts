@@ -43,6 +43,14 @@ export interface RoastConfig {
 
   // Custom lint rules
   rules?: CustomRule[];
+
+  // Webhook notification
+  notify?: {
+    url?: string;
+    platform?: 'slack' | 'teams' | 'discord' | 'generic';
+    onlyOnRegression?: boolean;
+    threshold?: number;
+  };
 }
 
 const DEFAULT_CONFIG: RoastConfig = {
@@ -61,6 +69,7 @@ const DEFAULT_CONFIG: RoastConfig = {
   deductions: {},
   plugins: [],
   rules: [],
+  notify: undefined,
 };
 
 export function loadConfig(rootDir: string): RoastConfig {
@@ -109,6 +118,7 @@ export function loadConfig(rootDir: string): RoastConfig {
         ...(userConfig.plugins || []),
       ],
       rules: [...(DEFAULT_CONFIG.rules || []), ...(userConfig.rules || [])],
+      notify: userConfig.notify || DEFAULT_CONFIG.notify,
     };
   } catch (error) {
     console.warn(`Warning: Failed to load .roastrc.json: ${error instanceof Error ? error.message.replace(/[A-Z]:\\[^\s"']+|\/[^\s"']+/g, '<path>') : 'unknown error'}`);

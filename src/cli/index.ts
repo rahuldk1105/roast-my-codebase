@@ -81,6 +81,8 @@ import { installPreCommitHook, uninstallPreCommitHook } from "../hooks/index.js"
 import { loadPlugins } from "../plugins/index.js";
 import { startDashboard } from "../serve/index.js";
 import { updateReadmeBadge } from "../readme/index.js";
+import { sendNotification, NotifyConfig } from "../notify/index.js";
+import { getExplanation, listCategories, renderExplanation } from "../explain/index.js";
 
 function loadPackageVersion(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -141,13 +143,39 @@ export function createCli(): Command {
     .option("--port <number>", "Port for --serve dashboard (default: 7777)", parseInt)
     .option("--bundle", "Scan build output for bundle size regressions")
     .option("--update-readme", "Update health badge in README.md with current score")
+    .option("--notify <url>", "Send report to Slack/Teams/Discord webhook URL")
+    .option("--explain [category]", "Explain a finding category (or list all categories)")
+    .option("--file <path>", "Scan a single file and show all findings for it")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; failOnTrend?: boolean; trendDrops?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean; updateReadme?: boolean; notify?: string; explain?: string | boolean; file?: string }) => {
       const rootDir = path.resolve(targetPath);
+
+      if (options.explain !== undefined) {
+        if (options.explain === true || options.explain === '') {
+          // List all categories
+          console.log(chalk.bold('\n  Available categories:\n'));
+          const cats = listCategories();
+          const cols = 3;
+          for (let i = 0; i < cats.length; i += cols) {
+            const row = cats.slice(i, i + cols).map(c => c.padEnd(30)).join('');
+            console.log(chalk.dim('  ') + row);
+          }
+          console.log(chalk.dim('\n  Usage: --explain <category>\n'));
+        } else {
+          const exp = getExplanation(options.explain as string);
+          if (!exp) {
+            console.log(chalk.yellow(`\n  Unknown category: "${options.explain}"`));
+            console.log(chalk.dim('  Run --explain (no argument) to list all categories\n'));
+            process.exit(1);
+          }
+          console.log(renderExplanation(exp));
+        }
+        process.exit(0);
+      }
 
       if (options.initCi) {
         const pm = detectPackageManager(rootDir);
@@ -1010,6 +1038,23 @@ export default {
         if (options.hotmap) {
           const tree = buildFolderTree(report.findings, rootDir);
           console.log(renderHotmap(tree, options.hotmapDepth ?? 4));
+        }
+
+        // Send webhook notification
+        const notifyUrl = options.notify || config.notify?.url;
+        if (notifyUrl) {
+          const notifyConfig: NotifyConfig = {
+            url: notifyUrl,
+            platform: config.notify?.platform,
+            threshold: config.notify?.threshold,
+            onlyOnRegression: config.notify?.onlyOnRegression,
+          };
+          try {
+            await sendNotification(report, notifyConfig);
+            console.log(chalk.green('✓ Notification sent\n'));
+          } catch (error) {
+            console.warn(chalk.yellow(`⚠ Notification failed: ${error instanceof Error ? error.message : String(error)}\n`));
+          }
         }
       } catch (error) {
         spinner.stop();

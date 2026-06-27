@@ -159,6 +159,31 @@ export function validateConfig(userConfig: unknown): Partial<RoastConfig> {
     }
   }
 
+  // Validate notify config
+  if ('notify' in config && typeof config.notify === 'object' && config.notify !== null) {
+    const n = config.notify as Record<string, unknown>;
+    validated.notify = {};
+
+    if (typeof n.url === 'string' && n.url.length < 500) {
+      try {
+        new URL(n.url);
+        validated.notify.url = n.url;
+      } catch { /* skip invalid URLs */ }
+    }
+
+    if (['slack', 'teams', 'discord', 'generic'].includes(n.platform as string)) {
+      validated.notify.platform = n.platform as 'slack' | 'teams' | 'discord' | 'generic';
+    }
+
+    if (typeof n.onlyOnRegression === 'boolean') {
+      validated.notify.onlyOnRegression = n.onlyOnRegression;
+    }
+
+    if (typeof n.threshold === 'number' && n.threshold >= 0 && n.threshold <= 100) {
+      validated.notify.threshold = n.threshold;
+    }
+  }
+
   return validated;
 }
 
