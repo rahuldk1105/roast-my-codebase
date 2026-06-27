@@ -364,6 +364,11 @@ export default {
 
       if (options.file) {
         const targetFile = path.resolve(rootDir, options.file);
+        const normalizedRootForFile = path.resolve(rootDir);
+        if (!targetFile.startsWith(normalizedRootForFile + path.sep) && targetFile !== normalizedRootForFile) {
+          console.error(chalk.red(`\nSecurity: --file path must be within the project directory.\n`));
+          process.exit(1);
+        }
 
         if (!fs.existsSync(targetFile)) {
           console.error(chalk.red(`\nFile not found: ${targetFile}\n`));

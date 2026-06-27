@@ -7,6 +7,21 @@ import { readFileSafely } from "../utils/security.js";
 const DEFAULT_FILE_PATTERN =
   "**/*.{ts,tsx,js,jsx,py,go,rs,java,cs,rb,php,swift,kt}";
 
+/**
+ * Heuristic check for patterns likely to cause ReDoS.
+ * Detects nested quantifiers like (a+)+, (.*)* , ([a-z]+)+ etc.
+ * Returns true if the pattern looks dangerous.
+ */
+function looksLikeReDoS(pattern: string): boolean {
+  // Nested quantifiers: a group or character class followed by a quantifier,
+  // then the whole expression also has a quantifier.
+  // Examples: (a+)+  (.*)(.*)  ([a-z]+)+
+  const nestedQuantifier = /\([^)]*[+*{][^)]*\)[+*{]|[+*]\)[+*{]/;
+  // Also catch things like (\w+)+ or (\d+)+
+  const repeatedGroup = /\([^)]+\)[+*]\??[+*]/;
+  return nestedQuantifier.test(pattern) || repeatedGroup.test(pattern);
+}
+
 export class CustomRulesScanner implements Scanner {
   name = "custom-rules";
   private rules: CustomRule[];
@@ -19,6 +34,14 @@ export class CustomRulesScanner implements Scanner {
     const findings: Finding[] = [];
 
     for (const rule of this.rules) {
+      // Check for ReDoS-prone patterns before compiling
+      if (looksLikeReDoS(rule.pattern)) {
+        console.warn(
+          `custom-rules: skipping rule "${rule.id}" — pattern may cause ReDoS: ${rule.pattern}`
+        );
+        continue;
+      }
+
       // Compile regex — skip rule if pattern is invalid
       let regex: RegExp;
       try {
@@ -56,9 +79,13 @@ export class CustomRulesScanner implements Scanner {
         for (let i = 0; i < lines.length; i++) {
           if (countForFile >= maxPerFile) break;
 
+          // Skip extremely long lines to prevent catastrophic backtracking
+          const line = lines[i];
+          if (line.length > 2000) continue;
+
           // Reset lastIndex each iteration (needed for 'g' flag regexes)
           regex.lastIndex = 0;
-          if (!regex.test(lines[i])) continue;
+          if (!regex.test(line)) continue;
 
           const message = rule.message
             .replace(/\{file\}/g, rel)
@@ -70,7 +97,7 @@ export class CustomRulesScanner implements Scanner {
             category: rule.category || "custom-rule",
             message,
             file: rel,
-            detail: `Line ${i + 1}: ${lines[i].trim().slice(0, 100)}`,
+            detail: `Line ${i + 1}: ${line.trim().slice(0, 100)}`,
           };
 
           findings.push(finding);

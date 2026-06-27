@@ -604,7 +604,11 @@ const EXPLANATIONS: Record<string, CategoryExplanation> = {
 };
 
 export function getExplanation(category: string): CategoryExplanation | null {
-  return EXPLANATIONS[category] ?? null;
+  // Try exact match first, then lowercase, then lowercase with spaces replaced by hyphens
+  return EXPLANATIONS[category]
+    ?? EXPLANATIONS[category.toLowerCase()]
+    ?? EXPLANATIONS[category.toLowerCase().replace(/\s+/g, '-')]
+    ?? null;
 }
 
 export function listCategories(): string[] {
