@@ -15,6 +15,14 @@ const largeFileRoasts = [
   "This file is the software equivalent of a junk drawer that achieved consciousness.",
   "At this point, split it or give it a corner office.",
   "This file has seen three framework migrations and remembers all of them.",
+  "Every merge conflict in this file is a consequence of not splitting it when you had the chance.",
+  "// TODO: split this file into smaller files // Added 847 commits ago",
+  "The IDE takes a moment before opening this file. It's steeling itself.",
+  "Someone once looked at this file and said 'I'll deal with this later.' That was three years ago.",
+  "This file has a higher line count than the project's test suite.",
+  "Opening this file in vim is a commitment.",
+  "The search results for this file take longer than the search results for the whole project.",
+  "One day someone will split this file into sensible modules. Today is not that day. Neither was yesterday.",
 ];
 
 const extremeFileRoasts = [
@@ -48,6 +56,14 @@ const todoRoasts = [
   "A codebase full of TODOs is just a backlog with delusions of adequacy.",
   "Every TODO is a decision your past self kindly delegated to your future self.",
   "FIXME: this whole situation.",
+  "HACK comments are the developer's equivalent of a sticky note on a cracked pipe.",
+  "Some FIXME comments have outlasted the developers who wrote them.",
+  "XXX: denoting code so embarrassing it needed three warnings.",
+  "The number of FIXMEs suggests this feature was shipped before it was ready. Correct.",
+  "A TODO without a ticket number is just a dream.",
+  "These comment markers are a conversation between past you and future you. Future you is not happy.",
+  "The TODO density correlates with deadline pressure. The graph is not flattering.",
+  "HACK: this is the one that makes the whole thing work. Don't touch it.",
 ];
 
 const dependencyRoasts = [
@@ -62,6 +78,12 @@ const dependencyRoasts = [
   "This project has more indirect dependencies than direct features.",
   "node_modules: the folder that makes SSD manufacturers nervous.",
   "Some of these packages haven't had a commit since the Obama administration.",
+  "This package was installed to solve a problem that has since been solved by the platform.",
+  "The transitive dependency graph for this project has more nodes than the source code.",
+  "Every dependency is a supply chain. Every package in node_modules is a trust decision.",
+  "package-lock.json hasn't been committed. The build is not reproducible. This is fine.",
+  "Some of these packages have been deprecated. Some of the deprecations have been deprecated.",
+  "You have a dependency for left-padding. The lesson was not learned.",
 ];
 
 const circularRoasts = [
@@ -75,6 +97,11 @@ const circularRoasts = [
   "Congratulations, you've invented the software ouroboros.",
   "This import graph would make a graph theorist cry.",
   "The modules called. They're confused about who's in charge.",
+  "The import graph for this module is a knot. A graph-theory knot.",
+  "Circular dependencies are easy to introduce and expensive to remove. You're in the expensive part now.",
+  "These files are so entangled they should be refactored together or not at all.",
+  "The dependency inversion principle exists specifically to prevent this situation.",
+  "This circular dependency has probably already caused a subtle initialization order bug somewhere.",
 ];
 
 const structureRoasts = [
@@ -89,6 +116,11 @@ const structureRoasts = [
   "src/helpers/utils/common/shared — a path that describes nothing and contains everything.",
   "The folder nesting suggests someone was paid by the directory.",
   "This isn't a project structure. It's a treasure map with no X.",
+  "The directory named 'misc' is where good intentions go to retire.",
+  "A folder called 'new' is now the oldest folder in the project.",
+  "This nesting depth would be impressive if it were intentional.",
+  "The project structure suggests it was organized by someone who left before finishing.",
+  "helpers/, utils/, common/, shared/ — four folders, zero clarity, maximum confusion.",
 ];
 
 const complexityRoasts = [
@@ -103,6 +135,14 @@ const complexityRoasts = [
   "Reading this function cold is a hazing ritual.",
   "This function branches so much it's practically a hedge maze.",
   "I've seen smaller decision trees at the DMV.",
+  "This function has more early returns than a movie that spoils itself in the first act.",
+  "Nested ifs this deep suggest the original requirements changed three times mid-implementation.",
+  "The cyclomatic complexity here is not a number. It's a warning label.",
+  "Any function that requires a comment to explain its own structure should be two functions.",
+  "The code path through this function visits twelve states. Most of them are undefined.",
+  "This is the function everyone understands on Monday and nobody understands on Friday.",
+  "Whoever wrote this knew exactly what they were doing. That's the alarming part.",
+  "The indentation alone tells a story. It's a tragedy.",
 ];
 
 const duplicateRoasts = [
@@ -116,6 +156,14 @@ const duplicateRoasts = [
   "These code twins haven't been told about each other yet.",
   "Three copies of this logic exist. None of them agree on the edge cases.",
   "Copy-paste driven development: fast to write, slow to debug, impossible to change.",
+  "When this has a bug, which copy gets the fix? Asking for a future incident.",
+  "Duplication is a loan. Maintenance is the interest. This has compounded.",
+  "The copies diverged slightly. Now there are two versions of this logic and neither is correct.",
+  "At some point someone will need to change this. They will change one copy. Bug report incoming.",
+  "This code was copied before it was debugged. Now the bug lives in three places.",
+  "Three implementations of the same function suggests a communication problem as much as a code problem.",
+  "Copy-paste without abstraction: writing the same bug faster.",
+  "The original function is over there. These are its consequences.",
 ];
 
 const deadExportRoasts = [
@@ -129,6 +177,14 @@ const deadExportRoasts = [
   "These are the functions that showed up to the party but no one invited them.",
   "Exported but never imported — like a résumé sent to a spam folder.",
   "This export is the developer equivalent of a door that opens to a wall.",
+  "This export exists in case someone needs it. Nobody needs it. Nobody has ever needed it.",
+  "Tree-shaking will handle it. The cognitive overhead of reading it will not be handled.",
+  "Future developers will look at this export and wonder if removing it will break something. It won't. But they won't know that.",
+  "This function is public, undocumented, and unused. A perfect combination.",
+  "Dead exports are how APIs accumulate surface area without adding value.",
+  "The export keyword is load-bearing in theory. In this case, it's decoration.",
+  "Somebody exported this for future use. The future arrived. The function was not consulted.",
+  "This export is proof that 'just in case' is the most expensive reason to keep code.",
 ];
 
 const typeSafetyRoasts = [
@@ -143,6 +199,14 @@ const typeSafetyRoasts = [
   "This `@ts-ignore` comment is load-bearing. Remove it and discover what it was hiding.",
   "Your `any`s outnumber your actual types. TypeScript is just decoration at this point.",
   "// @ts-expect-error — at least this one is honest about the crime.",
+  "The runtime error you're preventing TypeScript from warning you about is coming. It's patient.",
+  "`as any` is not a cast. It's a declaration of surrender.",
+  "TypeScript inferred `never` here. You told it to be quiet.",
+  "Every `@ts-ignore` is a conversation TypeScript tried to have with you that you refused.",
+  "The type system is not your enemy. But you've treated it like one.",
+  "`any` as a parameter type means this function accepts everything and promises nothing.",
+  "You've used TypeScript as a syntax highlighter. Understandable. Wrong.",
+  "The runtime crash TypeScript would have caught is worth more than the time you saved ignoring it.",
 ];
 
 const gitChurnRoasts = [
@@ -155,6 +219,14 @@ const gitChurnRoasts = [
   "This file has been changed so many times git blame is a scroll of shame.",
   "Some files change because the domain evolves. This one changes because nobody got it right the first time.",
   "Churn this high usually means the file is load-bearing and terrifying.",
+  "Files that change constantly either own too much or aren't clear about what they own.",
+  "High churn is the codebase's way of saying this abstraction isn't quite right yet.",
+  "Every commit to this file is a negotiation between what it is and what it should be.",
+  "This file has been touched by eight different developers. None of them left comments.",
+  "git blame on this file is a palimpsest of regret.",
+  "Frequent changes without refactoring is how complexity accumulates in small increments.",
+  "This file changes in every sprint. Consider whether 'ownership' is the right word for this relationship.",
+  "The diff history for this file is longer than the file itself.",
 ];
 
 const securityRoasts = [
@@ -167,6 +239,14 @@ const securityRoasts = [
   "Your .env is committed. Rotate the keys. All of them. Now.",
   "Hardcoded credentials survive long after the systems that generated them.",
   "Security through 'nobody will look at this repo' is not a security model.",
+  "Incident report forthcoming. Filed under 'self-inflicted'.",
+  "The secret is in git. The secret has always been in git. The secret will always be in git.",
+  "eval() with user input is just a remote code execution vulnerability with extra steps.",
+  "This pattern appears in every OWASP Top 10 article written in the last decade.",
+  "The credential rotation email is going to be uncomfortable.",
+  "Security through obscurity is not a layer of the defense-in-depth model.",
+  "The threat model for this code assumes everyone is friendly. They are not.",
+  "Your .env file is now a historical document. Congratulations.",
 ];
 
 const testCoverageRoasts = [
@@ -180,6 +260,14 @@ const testCoverageRoasts = [
   "Writing code without tests is like building a bridge and refusing to drive on it first.",
   "Future you will spend 4 hours debugging something a 10-line test would have caught.",
   "The code is confident. The tests are not there to challenge it.",
+  "The absence of tests is a choice. Future you will have opinions about that choice.",
+  "This code has never been told it's wrong. That's the problem.",
+  "A bug here is a debugging session, not a test failure. Those are different experiences.",
+  "The confidence to ship untested code is admirable. Misplaced, but admirable.",
+  "At some point a regression will be introduced and traced back to this file. Book it.",
+  "This module has been running on faith since it was written.",
+  "The test pyramid has a foundation. This project skipped the foundation.",
+  "Every function here is one undefined behavior away from a production incident.",
 ];
 
 const frameworkRoasts = [
@@ -470,6 +558,22 @@ const comboRoasts = [
   "The issues aren't isolated. They know each other.",
   "This isn't a list of findings. This is a roadmap.",
   "Everything is technically working. That's the most optimistic reading available.",
+  "The scanner found issues in more categories than most codebases have categories.",
+  "This is a target-rich environment.",
+  "Broad problems suggest systemic causes, not isolated mistakes.",
+  "The findings span architecture, style, security, and testing. A full house.",
+  "This codebase is doing a lot of things. Unfortunately, several of them are wrong.",
+];
+
+const prSizeRoasts = [
+  "A PR this large is not a feature. It's a chapter.",
+  "Code review at this scale is a formality, not a safeguard.",
+  "The reviewer approved this. The reviewer did not read this.",
+  "Large PRs are how bugs get through review — not despite it, but because of it.",
+  "This PR changed enough files that 'looks good to me' is technically true but meaningless.",
+  "The git diff for this PR has its own table of contents.",
+  "Shipping a PR this size is optimistic. Reviewing it is fiction.",
+  "A 40-file PR is not a feature. It's a hostage situation.",
 ];
 
 function pick<T>(arr: T[]): T {
@@ -964,6 +1068,11 @@ export async function generateRoasts(
     roasts.push({ target: 'bundle', message: pick(bundleSizeRoasts), category: 'bundle-size' });
   }
 
+  const prSize = findings.filter(f => f.category === 'pr-size');
+  if (prSize.length > 0) {
+    roasts.push({ target: 'pull requests', message: pick(prSizeRoasts), category: 'pr-size' });
+  }
+
   return roasts;
 }
 
@@ -973,4 +1082,45 @@ export function generateVerdict(health: HealthScore): string {
   if (health.score >= 70) return pick(verdicts.fair);
   if (health.score >= 60) return pick(verdicts.risky);
   return pick(verdicts.chaotic);
+}
+
+export function generateContextualVerdict(health: HealthScore, findings: Finding[]): string {
+  const criticals = findings.filter(f => f.severity === 'critical').length;
+  const hasSecurityIssues = findings.some(f => ['secrets', 'env-in-git', 'security', 'db-sql-injection'].includes(f.category));
+  const hasTestIssues = findings.some(f => f.category === 'test-coverage' || f.category === 'test-quality');
+  const hasDependencyIssues = findings.some(f => f.category === 'npm-audit' || f.category === 'license-compliance');
+
+  // Specialized verdicts that layer on top of the base verdict
+  if (hasSecurityIssues && health.score < 70) {
+    return pick([
+      "Security issues at this health score is a combination that warrants immediate attention.",
+      "The vulnerabilities here are not theoretical. Prioritize them.",
+      "Functional code with security issues is a solved problem waiting to be exploited.",
+    ]);
+  }
+
+  if (criticals >= 5) {
+    return pick([
+      `${criticals} critical findings. This number should be zero before the next deploy.`,
+      "The critical findings alone are a sprint's worth of work.",
+      "With this many critical issues, the word 'critical' is doing real work.",
+    ]);
+  }
+
+  if (hasTestIssues && health.score >= 75) {
+    return pick([
+      "Good score, but the test coverage gap means confidence in that number is limited.",
+      "The health score would be more trustworthy with better test coverage backing it.",
+    ]);
+  }
+
+  if (hasDependencyIssues && health.score >= 70) {
+    return pick([
+      "The code is solid. The supply chain is not. Dependency hygiene is part of the score.",
+      "The application code is in good shape. The dependency health is a separate concern worth addressing.",
+    ]);
+  }
+
+  // Fall back to standard verdict
+  return generateVerdict(health);
 }

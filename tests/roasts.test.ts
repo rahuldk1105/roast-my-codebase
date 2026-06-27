@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateRoasts, generateVerdict, generateOpeningLine } from "../src/roasts/index.js";
+import { generateRoasts, generateVerdict, generateOpeningLine, generateContextualVerdict } from "../src/roasts/index.js";
 import { Finding, HealthScore } from "../src/types/index.js";
 
 describe("generateRoasts", () => {
@@ -182,5 +182,61 @@ describe("generateVerdict", () => {
       expect(typeof verdict).toBe("string");
       expect(verdict.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("generateContextualVerdict", () => {
+  it("returns a string for any input", () => {
+    const health: HealthScore = { score: 75, grade: "B", label: "Good" };
+    const result = generateContextualVerdict(health, []);
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("returns security-specific verdict when security findings exist and score < 70", () => {
+    const health: HealthScore = { score: 50, grade: "D", label: "Risky" };
+    const findings: Finding[] = [
+      {
+        id: "secret-1",
+        severity: "critical",
+        category: "secrets",
+        message: "API key found in source",
+        file: "src/config.ts",
+      },
+    ];
+    const result = generateContextualVerdict(health, findings);
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+    // Should not be a standard chaotic/risky verdict — security path should fire
+    const securityMessages = [
+      "Security issues at this health score is a combination that warrants immediate attention.",
+      "The vulnerabilities here are not theoretical. Prioritize them.",
+      "Functional code with security issues is a solved problem waiting to be exploited.",
+    ];
+    expect(securityMessages).toContain(result);
+  });
+
+  it("falls back to generateVerdict when no special conditions match", () => {
+    const health: HealthScore = { score: 95, grade: "A", label: "Excellent" };
+    const result = generateContextualVerdict(health, []);
+    // Should return a valid string (fallback to standard verdict)
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("generates pr-size roast for pr-size findings", async () => {
+    const findings: Finding[] = [
+      {
+        id: "pr-too-large",
+        severity: "warning",
+        category: "pr-size",
+        message: "PR contains 45 files",
+      },
+    ];
+    const roasts = await generateRoasts(findings);
+    const prRoast = roasts.find(r => r.category === "pr-size");
+    expect(prRoast).toBeDefined();
+    expect(prRoast!.target).toBe("pull requests");
+    expect(prRoast!.message.length).toBeGreaterThan(0);
   });
 });
