@@ -107,12 +107,14 @@ export function createCli(): Command {
     .option("--install-hooks", "Install git pre-commit hook to run roast before every commit")
     .option("--uninstall-hooks", "Remove the roast pre-commit hook")
     .option("--show-ignored", "Show which patterns are active in .roastignore")
+    .option("--hotmap", "Show ASCII directory tree with issue density per folder")
+    .option("--hotmap-depth <n>", "Max depth for hotmap tree (default: 4)", parseInt)
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -683,6 +685,12 @@ export function createCli(): Command {
           const htmlOutput = renderHtmlReport(report);
           saveHtmlReport(htmlOutput, rootDir);
           console.log(chalk.green(`\n✓ HTML report saved to .roast-report.html\n`));
+        }
+
+        // Show hotmap if requested
+        if (options.hotmap) {
+          const tree = buildFolderTree(report.findings, rootDir);
+          console.log(renderHotmap(tree, options.hotmapDepth ?? 4));
         }
       } catch (error) {
         spinner.stop();
