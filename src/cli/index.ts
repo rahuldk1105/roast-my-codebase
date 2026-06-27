@@ -48,6 +48,8 @@ import { generateFixSuggestions } from "../fixes/index.js";
 import { startWatchMode, renderWatchSummary } from "../watch/index.js";
 import { compareWithBranch, renderComparison } from "../compare/index.js";
 import { loadConfig } from "../config/index.js";
+import { loadRoastIgnore, filterIgnoredFindings } from "../utils/files.js";
+import { buildIgnorePatterns } from "../utils/constants.js";
 import { validateOutputPath, sanitizeError } from "../utils/security.js";
 import { runInteractiveMode } from "../interactive/index.js";
 import { loadHistory, addSnapshot, createSnapshot } from "../history/index.js";
@@ -104,12 +106,13 @@ export function createCli(): Command {
     .option("--regression-tolerance <points>", "Points of drop to allow before failing (default: 0)", parseInt)
     .option("--install-hooks", "Install git pre-commit hook to run roast before every commit")
     .option("--uninstall-hooks", "Remove the roast pre-commit hook")
+    .option("--show-ignored", "Show which patterns are active in .roastignore")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -162,6 +165,20 @@ export function createCli(): Command {
         process.exit(0);
       }
 
+      if (options.showIgnored) {
+        const roastIgnorePatternsForDisplay = loadRoastIgnore(rootDir);
+        if (roastIgnorePatternsForDisplay.length === 0) {
+          console.log(chalk.yellow("\nNo .roastignore file found.\n"));
+        } else {
+          console.log(chalk.bold("\n.roastignore patterns:\n"));
+          roastIgnorePatternsForDisplay.forEach((p) =>
+            console.log(chalk.dim(`  ${p}`))
+          );
+          console.log();
+        }
+        process.exit(0);
+      }
+
       if (!fs.existsSync(rootDir)) {
         console.error(`Error: "${rootDir}" does not exist.`);
         process.exit(1);
@@ -194,6 +211,11 @@ export function createCli(): Command {
       // Load configuration
       const config = loadConfig(rootDir);
 
+      // Load .roastignore and build combined ignore patterns
+      const roastIgnorePatterns = loadRoastIgnore(rootDir);
+      const configIgnorePatterns = config.ignore || [];
+      const allIgnorePatterns = buildIgnorePatterns([...configIgnorePatterns, ...roastIgnorePatterns]);
+
       // Build AI config from options and config file
       const aiConfig = {
         enabled: options.aiRoasts || config.ai?.enabled || false,
@@ -209,7 +231,7 @@ export function createCli(): Command {
       // const _pluginScanners = await loadPlugins(config, rootDir);
 
       // Define scanner function for reuse in comparison mode
-      const runScanners = async (scanRootDir: string): Promise<{ findings: Finding[]; health: HealthScore }> => {
+      const runScanners = async (scanRootDir: string, ignorePatterns: string[] = []): Promise<{ findings: Finding[]; health: HealthScore }> => {
         const allFindings: Finding[] = [];
 
         const fileScanner = new FileScanner();
@@ -268,14 +290,15 @@ export function createCli(): Command {
         const depHealthResult = await depHealthScanner.scan(scanRootDir);
         allFindings.push(...depHealthResult.findings);
 
-        const health = calculateHealth(allFindings);
-        return { findings: allFindings, health };
+        const filteredScanFindings = filterIgnoredFindings(allFindings, ignorePatterns, scanRootDir);
+        const health = calculateHealth(filteredScanFindings);
+        return { findings: filteredScanFindings, health };
       };
 
       // Handle comparison mode
       if (options.compare) {
         try {
-          const comparison = await compareWithBranch(rootDir, options.compare, runScanners);
+          const comparison = await compareWithBranch(rootDir, options.compare, (dir) => runScanners(dir, allIgnorePatterns));
           renderComparison(comparison, options.compare);
         } catch (error) {
           console.error(`\nComparison failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -521,11 +544,14 @@ export function createCli(): Command {
 
         spinner.stop();
 
+        // Apply .roastignore / config ignore filtering
+        const ignoredFilteredFindings = filterIgnoredFindings(allFindings, [...configIgnorePatterns, ...roastIgnorePatterns], rootDir);
+
         // Calculate health
-        const health = calculateHealth(allFindings);
+        const health = calculateHealth(ignoredFilteredFindings);
 
         // Generate roasts (with AI if enabled)
-        const roasts = await generateRoasts(allFindings, aiConfig, rootDir);
+        const roasts = await generateRoasts(ignoredFilteredFindings, aiConfig, rootDir);
 
         // Generate verdict
         const verdict = generateVerdict(health);
@@ -534,14 +560,14 @@ export function createCli(): Command {
         const projectName = getProjectName(rootDir);
 
         // Generate fix suggestions if --fix flag is provided
-        const fixes = options.fix ? generateFixSuggestions(allFindings) : undefined;
+        const fixes = options.fix ? generateFixSuggestions(ignoredFilteredFindings) : undefined;
 
         // Build report
         const report: RoastReport = {
           projectName,
           stats,
           health,
-          findings: allFindings,
+          findings: ignoredFilteredFindings,
           roasts,
           verdict,
           fixes,
@@ -563,7 +589,7 @@ export function createCli(): Command {
 
         // Track health history if requested
         if (options.track) {
-          const snapshot = createSnapshot(health, allFindings, rootDir);
+          const snapshot = createSnapshot(health, ignoredFilteredFindings, rootDir);
           const history = addSnapshot(rootDir, projectName, snapshot);
 
           console.log(chalk.green("\n✓ Health snapshot saved to .roast-history.json"));

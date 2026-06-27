@@ -6,3 +6,5 @@ dist/
 .roast-debug.log
 .roast-ai-cache.json
 .roast-cache.json
+.roast-report.html
+.roast-results.sarif

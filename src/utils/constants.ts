@@ -25,6 +25,14 @@ export const IGNORE_PATTERNS = [
   "**/.output/**",
 ];
 
+/**
+ * Build a merged ignore patterns array from the base IGNORE_PATTERNS
+ * plus any extra patterns (from .roastrc.json or .roastignore).
+ */
+export function buildIgnorePatterns(extraPatterns: string[] = []): string[] {
+  return [...IGNORE_PATTERNS, ...extraPatterns];
+}
+
 export const LARGE_FILE_THRESHOLDS = {
   warning: 500,
   large: 1000,
