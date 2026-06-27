@@ -2,6 +2,7 @@ import chalk from "chalk";
 import boxen from "boxen";
 import { RoastReport } from "../types/index.js";
 import { renderAsciiGrade } from "./ascii-art.js";
+import { generateOpeningLine } from "../roasts/index.js";
 
 export { renderJsonReport } from "./json.js";
 export { generateBadgeSvg, saveBadge } from "./badge.js";
@@ -50,6 +51,13 @@ export function renderReport(report: RoastReport, options?: { ascii?: boolean })
   sections.push("");
   sections.push(renderHealthBar(report.health.score));
   sections.push("");
+
+  // Opening line (only shown when score < 85)
+  const openingLine = generateOpeningLine(report.health.score, report.findings.length);
+  if (openingLine) {
+    sections.push(chalk.italic.dim(`  ${openingLine}`));
+    sections.push('');
+  }
 
   // Stats
   sections.push(chalk.bold.white("  Project Summary"));

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateRoasts, generateVerdict } from "../src/roasts/index.js";
+import { generateRoasts, generateVerdict, generateOpeningLine } from "../src/roasts/index.js";
 import { Finding, HealthScore } from "../src/types/index.js";
 
 describe("generateRoasts", () => {
@@ -106,6 +106,53 @@ describe("generateRoasts", () => {
 
     const largeFileRoast = roasts.find((r) => r.category === "large-files");
     expect(largeFileRoast).toBeUndefined();
+  });
+});
+
+describe("generateOpeningLine", () => {
+  it("returns null for score >= 85", () => {
+    expect(generateOpeningLine(85, 50)).toBeNull();
+    expect(generateOpeningLine(90, 100)).toBeNull();
+    expect(generateOpeningLine(100, 0)).toBeNull();
+  });
+
+  it("returns null for score 90", () => {
+    expect(generateOpeningLine(90, 0)).toBeNull();
+  });
+
+  it("returns a string for score < 40 with many findings", () => {
+    const result = generateOpeningLine(30, 70);
+    expect(typeof result).toBe("string");
+    expect(result!.length).toBeGreaterThan(0);
+  });
+
+  it("returns a string for score < 40 with few findings", () => {
+    const result = generateOpeningLine(35, 5);
+    expect(typeof result).toBe("string");
+    expect(result!.length).toBeGreaterThan(0);
+  });
+
+  it("returns a string for score < 60", () => {
+    const result = generateOpeningLine(55, 10);
+    expect(typeof result).toBe("string");
+    expect(result!.length).toBeGreaterThan(0);
+  });
+
+  it("returns a string for score < 60 with many findings", () => {
+    const result = generateOpeningLine(58, 70);
+    expect(typeof result).toBe("string");
+    expect(result!.length).toBeGreaterThan(0);
+  });
+
+  it("returns a string for score 60-84 with many findings", () => {
+    const result = generateOpeningLine(70, 35);
+    expect(typeof result).toBe("string");
+    expect(result!.length).toBeGreaterThan(0);
+  });
+
+  it("returns null for score 60-84 with few findings", () => {
+    expect(generateOpeningLine(75, 5)).toBeNull();
+    expect(generateOpeningLine(84, 10)).toBeNull();
   });
 });
 
