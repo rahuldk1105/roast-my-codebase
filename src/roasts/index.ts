@@ -278,6 +278,34 @@ const depOutdatedRoasts = [
   "These major version upgrades won't do themselves. (They will not, in fact, do themselves.)",
 ];
 
+const rubyRoasts = [
+  "Ruby: where every class is a God class waiting to happen.",
+  "This method is so complex it needs its own retrospective.",
+  "eval() in Ruby: because you miss the XSS vulnerabilities from your PHP days.",
+  "No frozen_string_literal? Your strings are living their best mutable life.",
+];
+
+const phpRoasts = [
+  "PHP: where SQL injection goes to be born.",
+  "This code predates prepared statements. And dignity.",
+  "MD5 for passwords in 2026. Bold choice.",
+  "var_dump() in production: the poor man's observability platform.",
+];
+
+const swiftRoasts = [
+  "Force unwrapping: Swift's way of saying 'I believe in you... mostly'.",
+  "This SwiftUI view has more @State than a government agency.",
+  "print() for debugging in production. Classic.",
+  "Callback pyramid: the Great Pyramid of Giza, but for closures.",
+];
+
+const kotlinRoasts = [
+  "!! in Kotlin: because NullPointerExceptions were getting lonely.",
+  "GlobalScope: structured concurrency's nemesis.",
+  "runBlocking in a coroutine. Thread blocked. Dreams crushed.",
+  "println() for logging: Kotlin 101, lesson 0.",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -641,6 +669,26 @@ export async function generateRoasts(
   const outdatedFindings = findings.filter(f => f.category === 'dep-outdated' && f.severity === 'warning');
   if (outdatedFindings.length > 0) {
     roasts.push({ target: 'dependencies', message: pick(depOutdatedRoasts), category: 'dep-outdated' });
+  }
+
+  const rubyIssues = findings.filter((f) => f.category === "ruby-issues" || f.category === "ruby-style");
+  if (rubyIssues.length > 0) {
+    roasts.push({ target: rubyIssues[0].file || "Ruby code", message: pick(rubyRoasts), category: "ruby-issues" });
+  }
+
+  const phpIssues = findings.filter((f) => f.category === "php-smell" || f.category === "php-issues");
+  if (phpIssues.length > 0) {
+    roasts.push({ target: phpIssues[0].file || "PHP code", message: pick(phpRoasts), category: "php-issues" });
+  }
+
+  const swiftIssues = findings.filter((f) => f.category === "swift-issues" || f.category === "swift-async");
+  if (swiftIssues.length > 0) {
+    roasts.push({ target: swiftIssues[0].file || "Swift code", message: pick(swiftRoasts), category: "swift-issues" });
+  }
+
+  const kotlinIssues = findings.filter((f) => f.category === "kotlin-issues" || f.category === "kotlin-coroutine");
+  if (kotlinIssues.length > 0) {
+    roasts.push({ target: kotlinIssues[0].file || "Kotlin code", message: pick(kotlinRoasts), category: "kotlin-issues" });
   }
 
   return roasts;

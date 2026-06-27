@@ -38,6 +38,18 @@ import {
   CSharpCodeSmellScanner,
   CSharpAsyncScanner,
   DepHealthScanner,
+  RubyComplexityScanner,
+  RubyCodeSmellScanner,
+  RubyStyleScanner,
+  PHPComplexityScanner,
+  PHPSecurityScanner,
+  PHPCodeSmellScanner,
+  SwiftComplexityScanner,
+  SwiftCodeSmellScanner,
+  SwiftAsyncScanner,
+  KotlinComplexityScanner,
+  KotlinCodeSmellScanner,
+  KotlinCoroutineScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -115,12 +127,14 @@ export function createCli(): Command {
     .option("--hotmap-depth <n>", "Max depth for hotmap tree (default: 4)", parseInt)
     .option("--list-plugins", "List all configured roast plugins")
     .option("--init-plugin <name>", "Scaffold a new roast plugin package")
+    .option("--serve", "Open interactive web dashboard in browser")
+    .option("--port <number>", "Port for --serve dashboard (default: 7777)", parseInt)
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -593,6 +607,54 @@ export default {
           );
         }
 
+        if (detectedLanguages.includes("ruby")) {
+          languageScanPromises.push(
+            Promise.all([
+              new RubyComplexityScanner().scan(rootDir),
+              new RubyCodeSmellScanner().scan(rootDir),
+              new RubyStyleScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
+        }
+
+        if (detectedLanguages.includes("php")) {
+          languageScanPromises.push(
+            Promise.all([
+              new PHPComplexityScanner().scan(rootDir),
+              new PHPSecurityScanner().scan(rootDir),
+              new PHPCodeSmellScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
+        }
+
+        if (detectedLanguages.includes("swift")) {
+          languageScanPromises.push(
+            Promise.all([
+              new SwiftComplexityScanner().scan(rootDir),
+              new SwiftCodeSmellScanner().scan(rootDir),
+              new SwiftAsyncScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
+        }
+
+        if (detectedLanguages.includes("kotlin")) {
+          languageScanPromises.push(
+            Promise.all([
+              new KotlinComplexityScanner().scan(rootDir),
+              new KotlinCodeSmellScanner().scan(rootDir),
+              new KotlinCoroutineScanner().scan(rootDir),
+            ]).then((results) => {
+              allFindings.push(...results.flatMap((r) => r.findings));
+            }),
+          );
+        }
+
         await Promise.all(languageScanPromises);
 
         // Run plugin scanners
@@ -686,6 +748,12 @@ export default {
           // Then start interactive fixing
           await runInteractiveMode(report, rootDir, options.dryRun || false);
           return;
+        }
+
+        // Serve dashboard mode — start HTTP server and keep process alive
+        if (options.serve) {
+          startDashboard(report, options.port ?? 7777);
+          return; // keep process alive — server stays running
         }
 
         // Render

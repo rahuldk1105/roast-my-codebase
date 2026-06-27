@@ -17,3 +17,7 @@ export { RustComplexityScanner, RustUnsafeScanner, RustClippyHintsScanner } from
 export { JavaComplexityScanner, JavaCodeSmellScanner, JavaNamingScanner } from "./java.js";
 export { CSharpComplexityScanner, CSharpCodeSmellScanner, CSharpAsyncScanner } from "./csharp.js";
 export { DepHealthScanner } from './dep-health.js';
+export { RubyComplexityScanner, RubyCodeSmellScanner, RubyStyleScanner } from "./ruby.js";
+export { PHPComplexityScanner, PHPSecurityScanner, PHPCodeSmellScanner } from "./php.js";
+export { SwiftComplexityScanner, SwiftCodeSmellScanner, SwiftAsyncScanner } from "./swift.js";
+export { KotlinComplexityScanner, KotlinCodeSmellScanner, KotlinCoroutineScanner } from "./kotlin.js";

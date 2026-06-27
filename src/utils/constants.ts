@@ -10,6 +10,11 @@ export const SOURCE_EXTENSIONS = [
   ".rs",      // Rust
   ".java",    // Java
   ".cs",      // C#
+  ".rb",      // Ruby
+  ".php",     // PHP
+  ".swift",   // Swift
+  ".kt",      // Kotlin
+  ".kts",     // Kotlin script
 ];
 
 export const IGNORE_PATTERNS = [

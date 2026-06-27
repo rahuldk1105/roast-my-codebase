@@ -90,6 +90,12 @@ export function calculateHealth(findings: Finding[]): HealthScore {
         if (finding.severity === "warning") score += -2;
         else score += -0.5;
         break;
+      case "ruby-style":
+      case "php-smell":
+      case "swift-async":
+      case "kotlin-coroutine":
+        score += HEALTH_DEDUCTIONS.frameworkViolation;
+        break;
     }
   }
 

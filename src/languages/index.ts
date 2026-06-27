@@ -9,7 +9,11 @@ export type SupportedLanguage =
   | "go"
   | "rust"
   | "java"
-  | "csharp";
+  | "csharp"
+  | "ruby"
+  | "php"
+  | "swift"
+  | "kotlin";
 
 export interface LanguageConfig {
   name: string;
@@ -74,6 +78,34 @@ export const LANGUAGE_CONFIGS: Record<SupportedLanguage, LanguageConfig> = {
     commentPatterns: [/\/\/.*/, /\/\*[\s\S]*?\*\//, /\/\/\/.*/, /\/\*\*[\s\S]*?\*\//],
     packageFiles: [".csproj", ".sln"],
     sourcePatterns: ["**/*.cs"],
+  },
+  ruby: {
+    name: "Ruby",
+    extensions: [".rb"],
+    commentPatterns: [/#.*/],
+    packageFiles: ["Gemfile", "Gemfile.lock", ".ruby-version"],
+    sourcePatterns: ["**/*.rb"],
+  },
+  php: {
+    name: "PHP",
+    extensions: [".php"],
+    commentPatterns: [/\/\/.*/, /\/\*[\s\S]*?\*\//, /#.*/],
+    packageFiles: ["composer.json", "composer.lock"],
+    sourcePatterns: ["**/*.php"],
+  },
+  swift: {
+    name: "Swift",
+    extensions: [".swift"],
+    commentPatterns: [/\/\/.*/, /\/\*[\s\S]*?\*\//],
+    packageFiles: ["Package.swift"],
+    sourcePatterns: ["**/*.swift"],
+  },
+  kotlin: {
+    name: "Kotlin",
+    extensions: [".kt", ".kts"],
+    commentPatterns: [/\/\/.*/, /\/\*[\s\S]*?\*\//],
+    packageFiles: ["build.gradle.kts", "settings.gradle.kts"],
+    sourcePatterns: ["**/*.kt"],
   },
 };
 
