@@ -10,3 +10,4 @@ dist/
 .roast-results.sarif
 .roast-junit.xml
 .roast-bundle-sizes.json
+.claude/
