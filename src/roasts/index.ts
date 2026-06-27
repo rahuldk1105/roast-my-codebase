@@ -763,6 +763,11 @@ export async function generateRoasts(
     roasts.push({ target: 'database', message: pick(databaseRoasts), category: 'database' });
   }
 
+  const bundleIssues = findings.filter(f => f.category === 'bundle-size' && f.severity !== 'info');
+  if (bundleIssues.length > 0) {
+    roasts.push({ target: 'bundle', message: pick(bundleSizeRoasts), category: 'bundle-size' });
+  }
+
   return roasts;
 }
 

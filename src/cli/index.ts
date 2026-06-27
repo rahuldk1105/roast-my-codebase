@@ -55,6 +55,7 @@ import {
   LicenseScanner,
   ConfigAuditScanner,
   DatabaseScanner,
+  BundleSizeScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -134,12 +135,13 @@ export function createCli(): Command {
     .option("--init-plugin <name>", "Scaffold a new roast plugin package")
     .option("--serve", "Open interactive web dashboard in browser")
     .option("--port <number>", "Port for --serve dashboard (default: 7777)", parseInt)
+    .option("--bundle", "Scan build output for bundle size regressions")
     .option(
       "--threshold <score>",
       "Exit with code 1 if health score is below threshold (use with --json)",
       parseInt
     )
-    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number }) => {
+    .action(async (targetPath: string, options: { json?: boolean; markdown?: boolean; markdownFile?: boolean; fix?: boolean; aiRoasts?: boolean; interactive?: boolean; dryRun?: boolean; track?: boolean; history?: number | boolean; watch?: boolean; compare?: string; badge?: boolean; ascii?: boolean; threshold?: number; htmlFile?: boolean; incremental?: boolean; since?: string; sarif?: boolean; sarifFile?: boolean; junit?: boolean; junitFile?: boolean; prComment?: boolean; initCi?: boolean; failOnRegression?: boolean; regressionTolerance?: number; installHooks?: boolean; uninstallHooks?: boolean; showIgnored?: boolean; hotmap?: boolean; hotmapDepth?: number; listPlugins?: boolean; initPlugin?: string; serve?: boolean; port?: number; bundle?: boolean }) => {
       const rootDir = path.resolve(targetPath);
 
       if (options.initCi) {
@@ -268,6 +270,42 @@ export default {
 
         console.log(chalk.green(`\n✓ Plugin scaffolded at ./${fullName}/\n`));
         console.log(chalk.dim(`  1. cd ${fullName}\n  2. npm install\n  3. npm run build\n  4. Add "${fullName}" to .roastrc.json plugins array\n`));
+        process.exit(0);
+      }
+
+      if (options.bundle) {
+        if (!fs.existsSync(rootDir)) {
+          console.error(`Error: "${rootDir}" does not exist.`);
+          process.exit(1);
+        }
+        const { BundleSizeScanner: BundleSizeScannerDynamic } = await import('../scanners/bundle.js');
+        const scanner = new BundleSizeScannerDynamic();
+        const result = await scanner.scan(rootDir);
+
+        const stats = result.stats as Record<string, unknown>;
+
+        if (stats?.skipped) {
+          console.log(chalk.yellow(`\n⚠ ${stats.reason}\n`));
+          process.exit(0);
+        }
+
+        console.log(chalk.bold(`\n  Bundle Size Report`));
+        console.log(chalk.dim(`  Output: ${stats?.outputDir}  Total: ${chalk.white(String(stats?.totalFormatted))}  Files: ${stats?.fileCount}`));
+        console.log();
+
+        if (result.findings.length === 0) {
+          if (stats?.hasBaseline) {
+            console.log(chalk.green('  ✓ No bundle size regressions detected\n'));
+          } else {
+            console.log(chalk.dim('  ✓ Baseline recorded — run again to detect regressions\n'));
+          }
+        } else {
+          for (const f of result.findings) {
+            const icon = f.severity === 'critical' ? chalk.red('✗') : f.severity === 'warning' ? chalk.yellow('⚠') : chalk.dim('ℹ');
+            console.log(`  ${icon} ${f.message}`);
+          }
+          console.log();
+        }
         process.exit(0);
       }
 
