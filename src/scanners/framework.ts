@@ -303,7 +303,7 @@ export class FrameworkScanner implements Scanner {
           const rel = path.relative(rootDir, filePath).replace(/\\/g, "/");
 
           // 1. Reactive statement side effects
-          // eslint-disable-next-line security/detect-unsafe-regex
+           
           if (/\$:\s.{0,100}(fetch\(|console\.log\(|localStorage)/.test(content)) {
             findings.push({
               id: `svelte-reactive-side-effects-${rel}`,

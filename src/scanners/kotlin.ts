@@ -64,7 +64,7 @@ export class KotlinComplexityScanner implements Scanner {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const funcMatch = line.match(/(?:fun)\s+(\w+)\s*[(<]/);
 
       if (funcMatch) {
@@ -173,6 +173,7 @@ export class KotlinCodeSmellScanner implements Scanner {
         const lines = content.split("\n");
         for (const line of lines) {
           // Look for top-level or class-level var declarations (not inside function body)
+          // eslint-disable-next-line security/detect-unsafe-regex
           if (/^\s*(?:public\s+)?var\s+\w+/.test(line) && !/^\s+(?:val|var)\s/.test(line.trimStart().replace(/^public\s+/, ""))) {
             findings.push({
               id: `kotlin-mutable-public-${rel}`,

@@ -64,7 +64,7 @@ export class SwiftComplexityScanner implements Scanner {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // eslint-disable-next-line security/detect-unsafe-regex
+       
       const funcMatch = line.match(/(?:func|init)\s+(\w+)\s*[(<]/);
 
       if (funcMatch) {
@@ -159,6 +159,7 @@ export class SwiftCodeSmellScanner implements Scanner {
         }
 
         // Large SwiftUI view files: count @State vars
+        // eslint-disable-next-line security/detect-unsafe-regex
         const stateVarCount = (content.match(/@State\s+(?:private\s+)?var\s+/g) || []).length;
         if (stateVarCount > 20) {
           findings.push({
@@ -209,7 +210,7 @@ export class SwiftAsyncScanner implements Scanner {
         const rel = relativePath(rootDir, file);
 
         // Callback pyramid: nested completion handler patterns
-        // eslint-disable-next-line security/detect-unsafe-regex
+         
         const callbackNesting = (content.match(/\{[^}]*completion\s*\(/g) || []).length;
         if (callbackNesting > 3) {
           findings.push({

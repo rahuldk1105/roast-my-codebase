@@ -78,6 +78,7 @@ function fixUnusedDependency(
   const packageName = match[1];
 
   // Validate package name to prevent command injection
+  // eslint-disable-next-line security/detect-unsafe-regex
   if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(packageName)) {
     return {
       success: false,

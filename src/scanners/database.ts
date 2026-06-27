@@ -66,7 +66,7 @@ export class DatabaseScanner implements Scanner {
 
     // 1. N+1 pattern — findMany/findFirst inside a loop
     const loopKeywords = /\b(for|forEach|map|while|reduce|filter)\b/;
-    // eslint-disable-next-line security/detect-unsafe-regex
+     
     const prismaQueryMethod = /\.(findMany|findFirst)\s*\(/;
 
     for (let i = 0; i < lines.length; i++) {
@@ -114,7 +114,7 @@ export class DatabaseScanner implements Scanner {
     }
 
     // 3. Raw SQL in Prisma — $queryRaw with string argument (not tagged template)
-    // eslint-disable-next-line security/detect-unsafe-regex
+     
     if (/\$queryRaw\s*\((?!`)|\$executeRaw\s*\((?!`)/.test(content)) {
       findings.push({
         id: `db-sql-injection-${rel}`,
@@ -155,7 +155,7 @@ export class DatabaseScanner implements Scanner {
     }
 
     // 2. Raw queries with string concatenation
-    // eslint-disable-next-line security/detect-unsafe-regex
+     
     if (/\.query\s*\(\s*[`'"][^`'"]*\$\{/.test(content) || /\.query\s*\([^)]*\+/.test(content)) {
       findings.push({
         id: `db-sql-injection-typeorm-${rel}`,
@@ -204,7 +204,7 @@ export class DatabaseScanner implements Scanner {
     }
 
     // 2. Raw queries with string concatenation
-    // eslint-disable-next-line security/detect-unsafe-regex
+     
     if (/sequelize\.query\s*\([^)]*\$\{/.test(content) || /sequelize\.query\s*\([^)]*\+/.test(content)) {
       findings.push({
         id: `db-sql-injection-seq-${rel}`,
@@ -217,7 +217,7 @@ export class DatabaseScanner implements Scanner {
 
     // 3. sync({ force: true })
     // Check line-by-line to avoid matching inside comments
-    // eslint-disable-next-line security/detect-unsafe-regex
+     
     const syncForceRe = /sync\s*\(\s*\{[^}]*force\s*:\s*true/;
     const hasDestructiveSync = lines.some((line) => {
       const trimmed = line.trimStart();
@@ -299,7 +299,7 @@ export class DatabaseScanner implements Scanner {
     const findings: Finding[] = [];
 
     // Match hardcoded credentials in connection strings — but not env vars
-    // eslint-disable-next-line security/detect-unsafe-regex
+     
     const credentialPattern = /(mongodb|postgresql|postgres|mysql|redis):\/\/[^$'"\s]{1,30}:[^$'"\s@]{1,100}@/;
 
     if (credentialPattern.test(content)) {
