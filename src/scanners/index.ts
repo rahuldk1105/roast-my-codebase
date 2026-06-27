@@ -23,3 +23,7 @@ export { SwiftComplexityScanner, SwiftCodeSmellScanner, SwiftAsyncScanner } from
 export { KotlinComplexityScanner, KotlinCodeSmellScanner, KotlinCoroutineScanner } from "./kotlin.js";
 export { TestQualityScanner } from "./test-quality.js";
 export { CustomRulesScanner } from "./custom-rules.js";
+export { LicenseScanner } from './license.js';
+export { ConfigAuditScanner } from './config-audit.js';
+export { BundleSizeScanner } from './bundle.js';
+export { DatabaseScanner } from './database.js';

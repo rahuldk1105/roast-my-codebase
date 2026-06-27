@@ -90,6 +90,11 @@ export function calculateHealth(findings: Finding[]): HealthScore {
         if (finding.severity === "warning") score += -2;
         else score += -0.5;
         break;
+      case "license-compliance":
+        if (finding.severity === "critical") score += -8;
+        else if (finding.severity === "warning") score += -3;
+        else score += -0.5;
+        break;
       case "test-quality":
         if (finding.severity === "critical") score += -5;
         else if (finding.severity === "warning") score += -2;
@@ -100,6 +105,33 @@ export function calculateHealth(findings: Finding[]): HealthScore {
       case "swift-async":
       case "kotlin-coroutine":
         score += HEALTH_DEDUCTIONS.frameworkViolation;
+        break;
+      case 'config-audit':
+        if (finding.severity === 'warning') score += -3;
+        else score += -1;
+        break;
+      case 'bundle-size':
+        if (finding.severity === 'critical') score += -5;
+        else if (finding.severity === 'warning') score += -3;
+        break;
+      case 'db-n-plus-one':
+        score += finding.severity === 'warning' ? -4 : -1;
+        break;
+      case 'db-sql-injection':
+        score += finding.severity === 'critical' ? -10 : -5;
+        break;
+      case 'db-over-fetch':
+        score += -1;
+        break;
+      case 'db-missing-transaction':
+      case 'db-typeorm-pattern':
+      case 'db-missing-index':
+      case 'db-mongo-pattern':
+      case 'db-schema-quality':
+        score += -2;
+        break;
+      case 'db-destructive':
+        score += -15;
         break;
       default:
         // Custom rules and unknown categories — score by ID prefix

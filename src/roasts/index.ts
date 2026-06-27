@@ -314,6 +314,31 @@ const testQualityRoasts = [
   "No assertions? You're not testing, you're just running code for fun.",
 ];
 
+const databaseRoasts = [
+  "N+1 queries: the ORM's way of testing your database's patience.",
+  "findAll() without limit. I hope your table is small. Spoiler: it won't be.",
+  "Raw SQL in an ORM project. Why have an ORM at all?",
+  "sync({ force: true }) in production. Bold strategy. Let's see how it pays off.",
+  "No indexes. Your database is doing a full table scan and judging you.",
+  "Hardcoded database credentials. Committing to the problem, one git push at a time.",
+];
+
+const configAuditRoasts = [
+  "strict: false in tsconfig. Living life on the edge.",
+  "No ESLint config. The lint-free lifestyle has consequences.",
+  "TypeScript without strict mode is just JavaScript with extra keystrokes.",
+  "skipLibCheck: true — because type errors in your dependencies are someone else's problem.",
+  "No Prettier config. Every file has its own formatting style. Delightful.",
+];
+
+const licenseRoasts = [
+  "GPL in your dependency tree: open source whether you like it or not.",
+  "AGPL: the license that says 'if you use this, you owe the world your code'.",
+  "Unknown license: Schrödinger's compliance — you don't know until a lawyer opens the box.",
+  "LGPL: the polite version of 'we're watching you'.",
+  "Mixing GPL with proprietary code. Legal's going to love this conversation.",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -706,6 +731,29 @@ export async function generateRoasts(
       message: pick(testQualityRoasts),
       category: "test-quality",
     });
+  }
+
+  const licenseIssues = findings.filter(f => f.category === 'license-compliance' && f.severity !== 'info');
+  if (licenseIssues.length > 0) {
+    roasts.push({
+      target: 'dependencies',
+      message: pick(licenseRoasts),
+      category: 'license-compliance',
+    });
+  }
+
+  const configIssues = findings.filter(f => f.category === 'config-audit');
+  if (configIssues.length > 0) {
+    roasts.push({
+      target: configIssues[0].file || 'config',
+      message: pick(configAuditRoasts),
+      category: 'config-audit',
+    });
+  }
+
+  const dbIssues = findings.filter(f => ['db-n-plus-one', 'db-sql-injection', 'db-over-fetch', 'db-destructive'].includes(f.category));
+  if (dbIssues.length > 0) {
+    roasts.push({ target: 'database', message: pick(databaseRoasts), category: 'database' });
   }
 
   return roasts;

@@ -52,6 +52,9 @@ import {
   KotlinCoroutineScanner,
   TestQualityScanner,
   CustomRulesScanner,
+  LicenseScanner,
+  ConfigAuditScanner,
+  DatabaseScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -363,6 +366,8 @@ export default {
           frameworkResult,
           depHealthResult,
           testQualityResult,
+          licenseResult,
+          databaseResult,
         ] = await Promise.all([
           new TodoScanner().scan(scanRootDir),
           new DependencyScanner().scan(scanRootDir),
@@ -378,6 +383,8 @@ export default {
           new FrameworkScanner().scan(scanRootDir),
           new DepHealthScanner().scan(scanRootDir),
           new TestQualityScanner().scan(scanRootDir),
+          new LicenseScanner().scan(scanRootDir),
+          new DatabaseScanner().scan(scanRootDir),
         ]);
 
         allFindings.push(
@@ -395,6 +402,8 @@ export default {
           ...frameworkResult.findings,
           ...depHealthResult.findings,
           ...testQualityResult.findings,
+          ...licenseResult.findings,
+          ...databaseResult.findings,
         );
 
         // Group 3: Plugin scanners (sequential — unknown side effects)
@@ -450,6 +459,8 @@ export default {
           new DepHealthScanner(),
           new TypeSafetyScanner(),
           new TestQualityScanner(),
+          new LicenseScanner(),
+          new DatabaseScanner(),
           ...pluginScanners,
           ...(customRulesScanner ? [customRulesScanner] : []),
         ];
@@ -525,6 +536,8 @@ export default {
           frameworkResult,
           depHealthResult,
           testQualityResult,
+          licenseResult,
+          databaseResult,
         ] = await Promise.all([
           new TodoScanner().scan(rootDir),
           new DependencyScanner().scan(rootDir),
@@ -540,6 +553,8 @@ export default {
           new FrameworkScanner().scan(rootDir),
           new DepHealthScanner().scan(rootDir),
           new TestQualityScanner().scan(rootDir),
+          new LicenseScanner().scan(rootDir),
+          new DatabaseScanner().scan(rootDir),
         ]);
 
         allFindings.push(
@@ -557,6 +572,8 @@ export default {
           ...frameworkResult.findings,
           ...depHealthResult.findings,
           ...testQualityResult.findings,
+          ...licenseResult.findings,
+          ...databaseResult.findings,
         );
 
         // Group 2: Language-specific scanners in parallel
