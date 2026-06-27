@@ -1,5 +1,6 @@
 import http from 'http';
 import { execFile } from 'child_process';
+import chokidar from 'chokidar';
 import { RoastReport, Finding } from '../types/index.js';
 
 // ── Color constants (matching existing html.ts theme) ──────────────────────
@@ -403,7 +404,7 @@ export function generateDashboardHtml(report: RoastReport): string {
       </div>
     </div>
     <div class="top-bar-actions">
-      <button class="btn" disabled title="Rescan not available in static mode">↺ Rescan</button>
+      <button class="btn" id="rescan-btn">↻ Rescan</button>
       <button class="btn btn-primary" id="export-btn">⬇ Export JSON</button>
     </div>
   </div>
@@ -750,6 +751,59 @@ export function generateDashboardHtml(report: RoastReport): string {
       });
     }
 
+    // ── SSE live reload ──────────────────────────────────────────────────────
+    var scanBadge = document.createElement('div');
+    scanBadge.id = 'scan-badge';
+    scanBadge.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:8px 14px;font-size:12px;color:#8b949e;display:none;z-index:9999';
+    document.body.appendChild(scanBadge);
+
+    var evtSource = new EventSource('/events');
+
+    evtSource.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+
+      if (data.type === 'scanning') {
+        scanBadge.textContent = '↻ Rescanning…';
+        scanBadge.style.color = '#8b949e';
+        scanBadge.style.display = 'block';
+      }
+
+      if (data.type === 'update') {
+        scanBadge.textContent = '✓ Updated';
+        scanBadge.style.color = '#3fb950';
+        // Reload the page to get the fresh HTML
+        setTimeout(function() { window.location.reload(); }, 400);
+      }
+
+      if (data.type === 'error') {
+        scanBadge.textContent = '✗ Rescan failed';
+        scanBadge.style.color = '#f85149';
+        setTimeout(function() { scanBadge.style.display = 'none'; }, 3000);
+      }
+    };
+
+    evtSource.onerror = function() {
+      // SSE connection lost — server probably stopped
+      scanBadge.textContent = '○ Disconnected';
+      scanBadge.style.color = '#8b949e';
+      scanBadge.style.display = 'block';
+    };
+
+    // ── Rescan button ────────────────────────────────────────────────────────
+    var rescanBtn = document.getElementById('rescan-btn');
+    if (rescanBtn) {
+      rescanBtn.addEventListener('click', function() {
+        rescanBtn.disabled = true;
+        rescanBtn.textContent = '↻ Scanning…';
+        // POST /rescan to trigger server-side rescan
+        fetch('/rescan', { method: 'POST' }).catch(function() {});
+        setTimeout(function() {
+          rescanBtn.disabled = false;
+          rescanBtn.textContent = '↻ Rescan';
+        }, 2000);
+      });
+    }
+
     // ── Initial render ───────────────────────────────────────────────────────
     refresh();
   })();
@@ -767,21 +821,77 @@ export function generateDashboardHtml(report: RoastReport): string {
  *   GET /            → HTML dashboard
  *   GET /api/report  → JSON report  (Content-Type: application/json)
  *   GET /health      → {"ok":true}
+ *   GET /events      → SSE stream for live reload
+ *   POST /rescan     → Trigger manual rescan (requires options.rescan)
  *   *                → 404
  */
-export function startDashboard(report: RoastReport, port: number = 7777): http.Server {
-  const html = generateDashboardHtml(report);
-  const reportJson = JSON.stringify(report);
+export function startDashboard(
+  report: RoastReport,
+  port: number = 7777,
+  options?: { watch?: boolean; rootDir?: string; rescan?: () => Promise<RoastReport> }
+): http.Server {
+  // Mutable state — updated on each rescan
+  let currentReport = report;
+  let currentHtml = generateDashboardHtml(report);
+  let currentReportJson = JSON.stringify(report);
+
+  // SSE client management
+  const sseClients = new Set<http.ServerResponse>();
+
+  // Rescan state (hoisted for use in both request handler and watcher)
+  let isRescanning = false;
+
+  function broadcast(data: object): void {
+    const msg = `data: ${JSON.stringify(data)}\n\n`;
+    for (const client of sseClients) {
+      try { client.write(msg); } catch { sseClients.delete(client); }
+    }
+  }
 
   const server = http.createServer((req, res) => {
     const url = req.url ?? '/';
 
+    // SSE endpoint
+    if (req.method === 'GET' && url === '/events') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.write('data: {"type":"connected"}\n\n');
+      sseClients.add(res);
+      req.on('close', () => sseClients.delete(res));
+      return;
+    }
+
+    // Manual rescan endpoint
+    if (req.method === 'POST' && url === '/rescan' && options?.rescan) {
+      res.writeHead(202, { 'Content-Type': 'application/json' });
+      res.end('{"status":"scanning"}');
+      if (!isRescanning) {
+        isRescanning = true;
+        broadcast({ type: 'scanning', file: 'manual' });
+        options.rescan().then(newReport => {
+          currentReport = newReport;
+          currentHtml = generateDashboardHtml(newReport);
+          currentReportJson = JSON.stringify(newReport);
+          broadcast({ type: 'update', report: newReport });
+          isRescanning = false;
+        }).catch(() => {
+          broadcast({ type: 'error', message: 'Rescan failed' });
+          isRescanning = false;
+        });
+      }
+      return;
+    }
+
     if (req.method === 'GET' && url === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(html);
+      res.end(currentHtml);
     } else if (req.method === 'GET' && url === '/api/report') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(reportJson);
+      res.end(currentReportJson);
     } else if (req.method === 'GET' && url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end('{"ok":true}');
@@ -808,6 +918,56 @@ export function startDashboard(report: RoastReport, port: number = 7777): http.S
         execFile('open', [url], () => { /* best-effort */ });
       } else {
         execFile('xdg-open', [url], () => { /* best-effort */ });
+      }
+
+      // Start file watcher if requested
+      if (options?.watch && options?.rootDir && options?.rescan) {
+        const watcher = chokidar.watch(
+          ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.py', '**/*.go', '**/*.rs', '**/*.java', '**/*.cs', '**/*.rb', '**/*.php', '**/*.swift', '**/*.kt'],
+          {
+            cwd: options.rootDir,
+            ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/build/**'],
+            ignoreInitial: true,
+            persistent: true,
+          }
+        );
+
+        let debounceTimer: NodeJS.Timeout | null = null;
+
+        watcher.on('change', (changedPath: string) => {
+          if (isRescanning) return;
+          if (debounceTimer) clearTimeout(debounceTimer);
+
+          debounceTimer = setTimeout(async () => {
+            if (isRescanning) return;
+            isRescanning = true;
+
+            // Notify clients: scanning started
+            broadcast({ type: 'scanning', file: changedPath });
+
+            try {
+              const newReport = await options.rescan!();
+              // Update the stored report and regenerated HTML
+              currentReport = newReport;
+              currentHtml = generateDashboardHtml(newReport);
+              currentReportJson = JSON.stringify(newReport);
+
+              // Push full update to all SSE clients
+              broadcast({ type: 'update', report: newReport });
+              console.log(`  ↻ Dashboard updated (${changedPath})`);
+            } catch (err) {
+              broadcast({ type: 'error', message: 'Rescan failed' });
+            } finally {
+              isRescanning = false;
+            }
+          }, 800); // 800ms debounce
+        });
+
+        // Cleanup watcher on SIGINT
+        process.on('SIGINT', () => {
+          watcher.close();
+          process.exit(0);
+        });
       }
     });
   };

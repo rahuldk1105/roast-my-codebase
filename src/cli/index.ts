@@ -752,7 +752,60 @@ export default {
 
         // Serve dashboard mode — start HTTP server and keep process alive
         if (options.serve) {
-          startDashboard(report, options.port ?? 7777);
+          startDashboard(report, options.port ?? 7777, {
+            watch: true,
+            rootDir,
+            rescan: async () => {
+              const freshFindings: Finding[] = [];
+
+              const fileScanner = new FileScanner();
+              const fileResult = await fileScanner.scan(rootDir);
+              freshFindings.push(...fileResult.findings);
+              const freshStats = fileResult.stats;
+
+              const [
+                todoResult, depResult, circularResult, structureResult,
+                complexityResult, duplicateResult, deadExportResult,
+                typeSafetyResult, testCoverageResult, gitInsightsResult,
+                securityResult, frameworkResult, depHealthResult,
+              ] = await Promise.all([
+                new TodoScanner().scan(rootDir),
+                new DependencyScanner().scan(rootDir),
+                new CircularDependencyScanner().scan(rootDir),
+                new StructureScanner().scan(rootDir),
+                new ComplexityScanner().scan(rootDir),
+                new DuplicateScanner().scan(rootDir),
+                new DeadExportScanner().scan(rootDir),
+                new TypeSafetyScanner().scan(rootDir),
+                new TestCoverageScanner().scan(rootDir),
+                new GitInsightsScanner().scan(rootDir),
+                new SecurityScanner().scan(rootDir),
+                new FrameworkScanner().scan(rootDir),
+                new DepHealthScanner().scan(rootDir),
+              ]);
+              freshFindings.push(
+                ...todoResult.findings, ...depResult.findings, ...circularResult.findings,
+                ...structureResult.findings, ...complexityResult.findings, ...duplicateResult.findings,
+                ...deadExportResult.findings, ...typeSafetyResult.findings, ...testCoverageResult.findings,
+                ...gitInsightsResult.findings, ...securityResult.findings, ...frameworkResult.findings,
+                ...depHealthResult.findings,
+              );
+
+              const filteredFresh = filterIgnoredFindings(freshFindings, allIgnorePatterns, rootDir);
+              const freshHealth = calculateHealth(filteredFresh);
+              const freshRoasts = await generateRoasts(filteredFresh, aiConfig, rootDir);
+              const freshVerdict = generateVerdict(freshHealth);
+
+              return {
+                projectName: getProjectName(rootDir),
+                stats: freshStats,
+                health: freshHealth,
+                findings: filteredFresh,
+                roasts: freshRoasts,
+                verdict: freshVerdict,
+              };
+            },
+          });
           return; // keep process alive — server stays running
         }
 

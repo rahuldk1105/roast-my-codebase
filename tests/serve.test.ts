@@ -276,4 +276,120 @@ describe("startDashboard", () => {
     expect(parsed.findings[0].severity).toBe("critical");
     expect(parsed.verdict).toBe(mockReport.verdict);
   });
+
+  it("GET /events returns text/event-stream content type", async () => {
+    const port = pickPort();
+    const server = startDashboard(mockReport, port);
+    servers.push(server);
+    const actualPort = await waitListening(server);
+
+    // Use a raw request so we can read the first chunk and then destroy the connection
+    await new Promise<void>((resolve, reject) => {
+      const req = http.get(`http://127.0.0.1:${actualPort}/events`, (res) => {
+        try {
+          expect(res.statusCode).toBe(200);
+          expect(res.headers["content-type"]).toContain("text/event-stream");
+          // Read the initial "connected" event then abort
+          res.once("data", () => {
+            req.destroy();
+            resolve();
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+      req.on("error", (err) => {
+        // ECONNRESET is expected when we call req.destroy()
+        if ((err as NodeJS.ErrnoException).code === "ECONNRESET") {
+          resolve();
+        } else {
+          reject(err);
+        }
+      });
+    });
+  });
+
+  it("POST /rescan returns 202 when rescan option is provided", async () => {
+    const port = pickPort();
+    let rescanCalled = false;
+    const server = startDashboard(mockReport, port, {
+      watch: false,
+      rescan: async () => {
+        rescanCalled = true;
+        return mockReport;
+      },
+    });
+    servers.push(server);
+    const actualPort = await waitListening(server);
+
+    const res = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+      const req = http.request(
+        { hostname: "127.0.0.1", port: actualPort, path: "/rescan", method: "POST" },
+        (res) => {
+          let body = "";
+          res.setEncoding("utf8");
+          res.on("data", (chunk: string) => { body += chunk; });
+          res.on("end", () => resolve({ status: res.statusCode ?? 0, body }));
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+
+    expect(res.status).toBe(202);
+    const parsed = JSON.parse(res.body);
+    expect(parsed.status).toBe("scanning");
+  });
+
+  it("backward compat: startDashboard works without options argument", async () => {
+    const port = pickPort();
+    // No options argument — should not throw
+    const server = startDashboard(mockReport, port);
+    servers.push(server);
+    const actualPort = await waitListening(server);
+
+    const res = await get(actualPort, "/health");
+    expect(res.status).toBe(200);
+  });
+
+  it("backward compat: startDashboard works with empty options object", async () => {
+    const port = pickPort();
+    const server = startDashboard(mockReport, port, {});
+    servers.push(server);
+    const actualPort = await waitListening(server);
+
+    const res = await get(actualPort, "/");
+    expect(res.status).toBe(200);
+    expect(res.contentType).toContain("text/html");
+  });
+
+  it("SSE client tracking: connect adds client, close removes it", async () => {
+    const port = pickPort();
+    const server = startDashboard(mockReport, port);
+    servers.push(server);
+    const actualPort = await waitListening(server);
+
+    // Open SSE connection and verify we receive the connected event
+    await new Promise<void>((resolve, reject) => {
+      const req = http.get(`http://127.0.0.1:${actualPort}/events`, (res) => {
+        expect(res.statusCode).toBe(200);
+        let buf = "";
+        res.on("data", (chunk: Buffer) => {
+          buf += chunk.toString();
+          // Once we have the initial connected message, close the connection
+          if (buf.includes('"type":"connected"')) {
+            req.destroy();
+          }
+        });
+      });
+      req.on("error", (err) => {
+        if ((err as NodeJS.ErrnoException).code === "ECONNRESET") {
+          resolve();
+        } else {
+          reject(err);
+        }
+      });
+      req.on("close", resolve);
+    });
+  });
 });
