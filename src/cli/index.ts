@@ -50,6 +50,7 @@ import {
   KotlinComplexityScanner,
   KotlinCodeSmellScanner,
   KotlinCoroutineScanner,
+  TestQualityScanner,
 } from "../scanners/index.js";
 import { detectProjectLanguage } from "../languages/index.js";
 import { calculateHealth } from "../scoring/index.js";
@@ -357,6 +358,7 @@ export default {
           securityResult,
           frameworkResult,
           depHealthResult,
+          testQualityResult,
         ] = await Promise.all([
           new TodoScanner().scan(scanRootDir),
           new DependencyScanner().scan(scanRootDir),
@@ -371,6 +373,7 @@ export default {
           new SecurityScanner().scan(scanRootDir),
           new FrameworkScanner().scan(scanRootDir),
           new DepHealthScanner().scan(scanRootDir),
+          new TestQualityScanner().scan(scanRootDir),
         ]);
 
         allFindings.push(
@@ -387,6 +390,7 @@ export default {
           ...securityResult.findings,
           ...frameworkResult.findings,
           ...depHealthResult.findings,
+          ...testQualityResult.findings,
         );
 
         // Group 3: Plugin scanners (sequential — unknown side effects)
@@ -433,6 +437,7 @@ export default {
           new FrameworkScanner(),
           new DepHealthScanner(),
           new TypeSafetyScanner(),
+          new TestQualityScanner(),
           ...pluginScanners,
         ];
 
@@ -506,6 +511,7 @@ export default {
           securityResult,
           frameworkResult,
           depHealthResult,
+          testQualityResult,
         ] = await Promise.all([
           new TodoScanner().scan(rootDir),
           new DependencyScanner().scan(rootDir),
@@ -520,6 +526,7 @@ export default {
           new SecurityScanner().scan(rootDir),
           new FrameworkScanner().scan(rootDir),
           new DepHealthScanner().scan(rootDir),
+          new TestQualityScanner().scan(rootDir),
         ]);
 
         allFindings.push(
@@ -536,6 +543,7 @@ export default {
           ...securityResult.findings,
           ...frameworkResult.findings,
           ...depHealthResult.findings,
+          ...testQualityResult.findings,
         );
 
         // Group 2: Language-specific scanners in parallel

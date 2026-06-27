@@ -306,6 +306,14 @@ const kotlinRoasts = [
   "println() for logging: Kotlin 101, lesson 0.",
 ];
 
+const testQualityRoasts = [
+  "Tests that always pass are basically just green noise.",
+  "expect(true).toBe(true): peak TDD.",
+  "Skipped tests: the software equivalent of 'we'll fix it in post'.",
+  ".only in CI: one test to rule them all, one test to find them, one test to bring the pipeline down.",
+  "No assertions? You're not testing, you're just running code for fun.",
+];
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -689,6 +697,15 @@ export async function generateRoasts(
   const kotlinIssues = findings.filter((f) => f.category === "kotlin-issues" || f.category === "kotlin-coroutine");
   if (kotlinIssues.length > 0) {
     roasts.push({ target: kotlinIssues[0].file || "Kotlin code", message: pick(kotlinRoasts), category: "kotlin-issues" });
+  }
+
+  const testQuality = findings.filter(f => f.category === "test-quality");
+  if (testQuality.length > 0) {
+    roasts.push({
+      target: testQuality[0].file || "test suite",
+      message: pick(testQualityRoasts),
+      category: "test-quality",
+    });
   }
 
   return roasts;

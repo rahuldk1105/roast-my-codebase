@@ -21,3 +21,5 @@ export { RubyComplexityScanner, RubyCodeSmellScanner, RubyStyleScanner } from ".
 export { PHPComplexityScanner, PHPSecurityScanner, PHPCodeSmellScanner } from "./php.js";
 export { SwiftComplexityScanner, SwiftCodeSmellScanner, SwiftAsyncScanner } from "./swift.js";
 export { KotlinComplexityScanner, KotlinCodeSmellScanner, KotlinCoroutineScanner } from "./kotlin.js";
+export { TestQualityScanner } from "./test-quality.js";
+export { CustomRulesScanner } from "./custom-rules.js";
