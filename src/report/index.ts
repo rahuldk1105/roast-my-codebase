@@ -84,6 +84,40 @@ export function renderReport(report: RoastReport, options?: { ascii?: boolean })
   );
   sections.push("");
 
+  // Map scanner finding categories to roast categories (roasts.ts may group multiple scanner
+  // categories under one roast category, e.g. "dependencies" covers "unused-deps").
+  const FINDING_TO_ROAST_CATEGORY: Record<string, string> = {
+    "unused-deps": "dependencies",
+    "nextjs-metadata": "framework",
+    "nextjs-client-server": "framework",
+    "react-error-boundary": "framework",
+    "secrets": "security",
+    "env-in-git": "security",
+    "eval-usage": "security",
+    "npm-audit": "npm-audit",
+    "dep-outdated": "dep-outdated",
+    "ruby-style": "ruby-issues",
+    "php-smell": "php-issues",
+    "swift-async": "swift-issues",
+    "kotlin-coroutine": "kotlin-issues",
+    "db-n-plus-one": "database",
+    "db-sql-injection": "database",
+    "db-over-fetch": "database",
+    "db-destructive": "database",
+  };
+
+  // Build roast lookup maps for inline display
+  const roastByFile = new Map<string, string>();
+  const roastByCategory = new Map<string, string>();
+  for (const roast of report.roasts) {
+    if (roast.target === "codebase") continue;
+    roastByCategory.set(roast.category, roast.message);
+    // Looks like a file path (has / or dot without spaces)
+    if (roast.target.includes("/") || (roast.target.includes(".") && !roast.target.includes(" "))) {
+      roastByFile.set(roast.target, roast.message);
+    }
+  }
+
   // Findings summary
   const warnings = report.findings.filter((f) => f.severity === "warning");
   const criticals = report.findings.filter((f) => f.severity === "critical");
@@ -108,32 +142,44 @@ export function renderReport(report: RoastReport, options?: { ascii?: boolean })
     }
     sections.push("");
 
-    // Key findings detail
+    // Key findings with inline roast commentary
+    const shownRoastKeys = new Set<string>();
     const keyFindings = [...criticals, ...warnings].slice(0, 8);
     for (const finding of keyFindings) {
       const icon =
         finding.severity === "critical" ? chalk.red("✗") : chalk.yellow("⚠");
       sections.push(`  ${icon} ${chalk.white(finding.message)}`);
+
+      // Try file-specific roast first, then direct category, then aliased category
+      let roastMsg: string | undefined;
+      let roastKey: string | undefined;
+
+      if (finding.file && roastByFile.has(finding.file)) {
+        roastKey = `file:${finding.file}`;
+        if (!shownRoastKeys.has(roastKey)) {
+          roastMsg = roastByFile.get(finding.file);
+        }
+      }
+      if (!roastMsg) {
+        const resolvedCategory = FINDING_TO_ROAST_CATEGORY[finding.category] ?? finding.category;
+        roastKey = `cat:${resolvedCategory}`;
+        if (!shownRoastKeys.has(roastKey)) {
+          roastMsg = roastByCategory.get(resolvedCategory);
+        }
+      }
+      if (roastMsg && roastKey) {
+        sections.push(`     ${chalk.italic.dim(roastMsg)}`);
+        shownRoastKeys.add(roastKey);
+      }
     }
     sections.push("");
   }
 
-  // Roasts
-  if (report.roasts.length > 0) {
-    sections.push(
-      boxen(chalk.bold.yellow(" Roast Time ") + " " + flame(), {
-        padding: { top: 0, bottom: 0, left: 1, right: 1 },
-        borderStyle: "round",
-        borderColor: "yellow",
-      })
-    );
+  // Codebase-level combo roast as a brief coda
+  const comboRoast = report.roasts.find((r) => r.target === "codebase");
+  if (comboRoast) {
+    sections.push(chalk.italic.yellow(`  ${comboRoast.message}`));
     sections.push("");
-
-    for (const roast of report.roasts) {
-      sections.push(`  ${chalk.bold.white(roast.target)}`);
-      sections.push(`  ${chalk.yellow(roast.message)}`);
-      sections.push("");
-    }
   }
 
   // Fix Suggestions
