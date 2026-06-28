@@ -208,11 +208,18 @@ export function renderReport(report: RoastReport, options?: { ascii?: boolean })
   sections.push("");
   sections.push(`  ${chalk.italic(report.verdict)}`);
   sections.push("");
-  sections.push(
-    chalk.dim("  ─────────────────────────────────────────")
+
+  // Share CTA
+  const tweetText = encodeURIComponent(
+    `My codebase just got roasted 🔥\n\nHealth Score: ${report.health.score}/100 ${report.health.grade} — ${report.health.label}\n\n"${report.verdict}"\n\nroast yours 👇`
   );
+  const tweetUrl = `https://x.com/intent/tweet?text=${tweetText}&url=https://github.com/rahuldk1105/roast-my-codebase`;
+  sections.push(chalk.dim("  " + "─".repeat(40)));
+  sections.push("");
+  sections.push(`  ${chalk.bold("Share your roast")} ${chalk.dim("→")} ${chalk.cyan(tweetUrl)}`);
+  sections.push("");
   sections.push(
-    chalk.dim("  roast-my-codebase · github.com/your-username/roast-my-codebase")
+    chalk.dim("  roast-my-codebase · github.com/rahuldk1105/roast-my-codebase")
   );
   sections.push("");
 
