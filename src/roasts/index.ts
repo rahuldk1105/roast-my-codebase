@@ -23,6 +23,15 @@ const largeFileRoasts = [
   "Opening this file in vim is a commitment.",
   "The search results for this file take longer than the search results for the whole project.",
   "One day someone will split this file into sensible modules. Today is not that day. Neither was yesterday.",
+  // meme refs
+  "It's over 9000 lines. At this point it's a power level, not a file.",
+  "We don't split files here. 👀",
+  "Nobody: ... This file: *adds 200 more lines*",
+  "404: Single Responsibility not found.",
+  "This file is built different. Unfortunately.",
+  "This file said 'why have many file when one file do trick.'",
+  "Jon Snow knows nothing about this file. Neither does anyone else.",
+  "Main character energy. Every function wants to be the hero.",
 ];
 
 const extremeFileRoasts = [
@@ -33,6 +42,12 @@ const extremeFileRoasts = [
   "2000 lines. One file. Zero mercy.",
   "This file has geological strata. The bottom layers date to a different framework.",
   "Splitting this file would be an act of mercy.",
+  // meme refs
+  "This is fine. 🔥 (It is not fine.)",
+  "This file said 'hold my semicolon' and never stopped.",
+  "Drake pointing meme: splitting into modules ❌ ... one file with 2000 lines ✅",
+  "The power of this file is OVER 9000 lines. Consider that a bad sign.",
+  "One does not simply open this file in a code review.",
 ];
 
 const largeFileWarningRoasts = [
@@ -64,6 +79,14 @@ const todoRoasts = [
   "These comment markers are a conversation between past you and future you. Future you is not happy.",
   "The TODO density correlates with deadline pressure. The graph is not flattering.",
   "HACK: this is the one that makes the whole thing work. Don't touch it.",
+  // meme refs
+  "This is fine. *TODO count increases* This is fine.",
+  "Two buttons meme: fix the bug now ❌ ... write TODO and run ✅",
+  "\"I'll fix it later\" — said in 2019. The TODO is still there.",
+  "The TODO is free real estate for Future You's problems.",
+  "Task failed successfully — HACK comment is now the only documentation.",
+  "These FIXMEs are giving 'we'll fix it in post' energy.",
+  "// TODO: understand why this works — commit message from 3 years ago, still unresolved.",
 ];
 
 const dependencyRoasts = [
@@ -84,6 +107,14 @@ const dependencyRoasts = [
   "package-lock.json hasn't been committed. The build is not reproducible. This is fine.",
   "Some of these packages have been deprecated. Some of the deprecations have been deprecated.",
   "You have a dependency for left-padding. The lesson was not learned.",
+  // meme refs
+  "node_modules is 300MB. The actual app is 4KB. We do a little installing.",
+  "npm install: hold on, let me download the entire internet real quick.",
+  "This is giving 'just one more dependency' energy from someone who said that 47 times.",
+  "Little Bobby Tables' cousin, Little Bobby `npm install --save`.",
+  "rm -rf node_modules and pray. The classic.",
+  "Unopened dependency. Collecting dust. Paying rent. Living rent-free in your bundle.",
+  "This package's last commit was when Stack Overflow still had a dark mode beta.",
 ];
 
 const circularRoasts = [
@@ -102,6 +133,13 @@ const circularRoasts = [
   "These files are so entangled they should be refactored together or not at all.",
   "The dependency inversion principle exists specifically to prevent this situation.",
   "This circular dependency has probably already caused a subtle initialization order bug somewhere.",
+  // meme refs
+  "A imports B, B imports A. It's giving 'chicken and egg' but worse.",
+  "Ouroboros architecture: the module that imports itself into oblivion.",
+  "The circle of life, but for spaghetti code.",
+  "This is the 'they were roommates' of software architecture.",
+  "Modules: we import each other. Graph theorists: I've never seen anything like this.",
+  "Webpack looked at this import graph and chose violence.",
 ];
 
 const structureRoasts = [
@@ -121,6 +159,13 @@ const structureRoasts = [
   "This nesting depth would be impressive if it were intentional.",
   "The project structure suggests it was organized by someone who left before finishing.",
   "helpers/, utils/, common/, shared/ — four folders, zero clarity, maximum confusion.",
+  // meme refs
+  "Folder named 'final'. Folder named 'final_v2'. Folder named 'final_ACTUAL'. Classic.",
+  "This structure has more layers than a Shrek metaphor.",
+  "The utils/ folder is just a junk drawer that learned to code.",
+  "Nobody knows what's in misc/. Nobody goes into misc/. We respect misc/.",
+  "This directory structure was designed by someone who had 'just one more idea.'",
+  "The folder is named 'temp'. It is 4 years old.",
 ];
 
 const complexityRoasts = [
@@ -143,6 +188,16 @@ const complexityRoasts = [
   "This is the function everyone understands on Monday and nobody understands on Friday.",
   "Whoever wrote this knew exactly what they were doing. That's the alarming part.",
   "The indentation alone tells a story. It's a tragedy.",
+  // meme refs
+  "This function has more branches than a Marvel multiverse plotline.",
+  "Gru's plan: write simple function → add one more condition → add one more condition → this.",
+  "Cyclomatic complexity over 20: we do a little suffering.",
+  "The nested ifs go so deep they have their own weather system.",
+  "Big if true. Bigger if false. Enormous if undefined.",
+  "This function is the 'we have clean code at home' of clean code.",
+  "Nobody: ... this function: *adds an else-if*",
+  "It's giving 'I just need to handle one more edge case' from 47 edge cases ago.",
+  "Reading this function is a lore dump nobody asked for.",
 ];
 
 const duplicateRoasts = [
@@ -164,6 +219,13 @@ const duplicateRoasts = [
   "Three implementations of the same function suggests a communication problem as much as a code problem.",
   "Copy-paste without abstraction: writing the same bug faster.",
   "The original function is over there. These are its consequences.",
+  // meme refs
+  "Ctrl+C, Ctrl+V, Ctrl+regret.",
+  "The original and the remix. Neither is correct.",
+  "This is the 'we have abstraction at home' of abstraction.",
+  "Same function, three locations. Pick your fighter (they all have the same bug).",
+  "Whoever did this has never heard of functions. Introduce yourself.",
+  "Copy-paste detected. Future junior dev crying about it in 6 months: loading...",
 ];
 
 const deadExportRoasts = [
@@ -185,6 +247,12 @@ const deadExportRoasts = [
   "The export keyword is load-bearing in theory. In this case, it's decoration.",
   "Somebody exported this for future use. The future arrived. The function was not consulted.",
   "This export is proof that 'just in case' is the most expensive reason to keep code.",
+  // meme refs
+  "404: importer not found.",
+  "This export said 'I'm ready' and then waited forever.",
+  "Posting on the internet vs this export: both got zero engagement.",
+  "exported for future use. The future said 'no thanks.'",
+  "This function is the 'reply all' of the codebase — present everywhere, needed nowhere.",
 ];
 
 const typeSafetyRoasts = [
@@ -207,6 +275,14 @@ const typeSafetyRoasts = [
   "`any` as a parameter type means this function accepts everything and promises nothing.",
   "You've used TypeScript as a syntax highlighter. Understandable. Wrong.",
   "The runtime crash TypeScript would have caught is worth more than the time you saved ignoring it.",
+  // meme refs
+  "TypeScript: am I a joke to you?",
+  "`any` is just JavaScript in a trench coat pretending to be TypeScript.",
+  "We have types at home. The types at home: `any`.",
+  "@ts-ignore: the developer equivalent of covering your eyes and saying 'it's fine.'",
+  "Using TypeScript without types is like buying a gym membership and never going. We've all done it. It's still wrong.",
+  "The `any` count in this file is giving 'I learned TypeScript in an afternoon' energy.",
+  "TypeScript tried to warn you. You put on noise-cancelling headphones.",
 ];
 
 const gitChurnRoasts = [
@@ -227,6 +303,13 @@ const gitChurnRoasts = [
   "Frequent changes without refactoring is how complexity accumulates in small increments.",
   "This file changes in every sprint. Consider whether 'ownership' is the right word for this relationship.",
   "The diff history for this file is longer than the file itself.",
+  // meme refs
+  "git blame: a horror story in commit messages.",
+  "This file changes so often it has its own fan base on Slack.",
+  "Quantity of commits ≠ quality of code. Exhibit A.",
+  "Six devs, zero docs, infinite git history. A classic.",
+  "Every PR touches this file. Nobody knows why. Nobody asks.",
+  "This file has seen more rewrites than a startup pitch deck.",
 ];
 
 const securityRoasts = [
@@ -247,6 +330,14 @@ const securityRoasts = [
   "Security through obscurity is not a layer of the defense-in-depth model.",
   "The threat model for this code assumes everyone is friendly. They are not.",
   "Your .env file is now a historical document. Congratulations.",
+  // meme refs
+  "Little Bobby Tables visited your repo. He felt at home.",
+  "The hackers found it before you did. They always do.",
+  "Pushed API key to GitHub. 47 bots cloned it. This is fine. 🔥",
+  "AWS bill incoming. Origin: mysterious. Cause: this commit.",
+  "This is not a security vulnerability. It is a free trial for attackers.",
+  "Your secrets are in git. They are immutable. They are eternal. They will outlive you.",
+  "Sir, this is a Wendy's — and also your database password is in plaintext.",
 ];
 
 const testCoverageRoasts = [
@@ -268,6 +359,14 @@ const testCoverageRoasts = [
   "This module has been running on faith since it was written.",
   "The test pyramid has a foundation. This project skipped the foundation.",
   "Every function here is one undefined behavior away from a production incident.",
+  // meme refs
+  "Works on my machine ™",
+  "No tests: the original move fast and break things strategy.",
+  "Ship it and pray — a time-honoured tradition.",
+  "This code is in production and has never met a test. Respect the confidence.",
+  "The only test for this function is a 3am PagerDuty alert.",
+  "QA: did you test this? Dev: it compiled. QA: ...",
+  "Bugs found in production: 0 (so far). Tests written: also 0. Coincidence? No.",
 ];
 
 const frameworkRoasts = [
@@ -280,6 +379,12 @@ const frameworkRoasts = [
   "Server components with client hooks: the temporal paradox of React.",
   "SEO is hard. Missing metadata makes it harder for no reason.",
   "React has conventions. They're not enforced. That's the trap.",
+  // meme refs
+  "The white screen of death is just an undocumented feature.",
+  "useEffect with no dependency array: runs on every render, symptoms TBD.",
+  "We have a framework. We have opinions. We have ignored both.",
+  "Next.js docs said don't do this. This is the 'hold my beer' commit.",
+  "React: just use components! This codebase: bold of you to assume.",
 ];
 
 const verdicts = {
@@ -292,6 +397,11 @@ const verdicts = {
     "Suspiciously healthy. Did you hide the bad files somewhere?",
     "The linter is satisfied. The linter is never satisfied. This is a good sign.",
     "Clean enough to show your colleagues. Rare.",
+    // meme refs
+    "Certified hood classic. Ship it.",
+    "No notes. Genuinely no notes. This is uncomfortable.",
+    "10/10, would git clone again.",
+    "The senior dev opened the PR and said nothing. That's the highest praise.",
   ],
   good: [
     "Solid work. A few rough edges, but nothing that keeps you up at night.",
@@ -302,6 +412,11 @@ const verdicts = {
     "Better than average, which is a low bar that you cleared with room to spare.",
     "A codebase that a new hire could navigate without a guide. That's saying something.",
     "Good bones. Some questionable wallpaper. Still livable.",
+    // meme refs
+    "Pretty good. Could be worse. Has been worse.",
+    "A solid B+. Your CS professor would nod.",
+    "Not bad at all. The bar was low but you cleared it with style.",
+    "We're so back. Almost.",
   ],
   fair: [
     "Your codebase is at that stage where 'refactor sprint' keeps getting postponed.",
@@ -313,6 +428,11 @@ const verdicts = {
     "This codebase is fine in the way that a car with 180k miles is fine.",
     "Holding together. Possibly through social cohesion and mutual agreement not to look too closely.",
     "The code ships. The code also shivers slightly when you touch the old parts.",
+    // meme refs
+    "It's giving 'works until it doesn't.'",
+    "Mid. Loveable mid, but mid.",
+    "This is fine. 🔥 (Mostly fine. Borderline fine.)",
+    "The vibe is: shipping features faster than addressing the findings from last quarter.",
   ],
   risky: [
     "Your codebase is one bad merge away from a support group.",
@@ -324,6 +444,12 @@ const verdicts = {
     "Not broken. Just... haunted.",
     "Production is stable. For now. Don't ask what 'for now' means.",
     "You're one refactor away from discovering why nobody refactored it before.",
+    // meme refs
+    "This codebase is one `npm install` away from an existential crisis.",
+    "It do be like that sometimes. It really do.",
+    "Jenga tower, move 47. Your turn.",
+    "The tech debt has filed for incorporation. It's a legal entity now.",
+    "Chaos mode: partially activated.",
   ],
   chaotic: [
     "This codebase is held together by hope and string literals.",
@@ -335,6 +461,15 @@ const verdicts = {
     "Code this complex doesn't have bugs. It has 'undocumented features' and 'emergent behavior'.",
     "Every function is load-bearing. You know this because removing one proved it.",
     "This code has achieved something rare: it is simultaneously legacy and unsupported.",
+    // meme refs
+    "This is fine. 🔥 (It is not fine. Nothing is fine.)",
+    "We are so back. We have never been back. We will not be back.",
+    "Bro thought he cooked. He did not cook.",
+    "The boys are NOT thriving.",
+    "This codebase said 'hold my beer' and never came back.",
+    "404: architecture not found.",
+    "It's giving 'written at 2am before a deadline and never touched again.'",
+    "Chaotic neutral codebase. No laws. No gods. Just vibes and runtime errors.",
   ],
 };
 
@@ -342,12 +477,17 @@ const pythonTypeHintsRoasts = [
   "Type hints are optional in Python. So are brakes on a car, technically.",
   "Dynamic typing is great until your production server discovers the wrong type at 3 AM.",
   "Type hints: because debugging at runtime is what keeps us young.",
+  "Python without type hints: a mystery novel where every function is a surprise ending.",
+  "This is fine until `str` shows up where `int` was expected at 3am on a Friday.",
+  "mypy would like a word. mypy is very upset.",
 ];
 
 const pythonImportRoasts = [
   "Wildcard imports: because you like playing 'guess which namespace that came from.'",
   "Deep relative imports: your codebase is spaghetti that imports other spaghetti.",
   "from module import * — the programming equivalent of 'throw everything in and hope.'",
+  "from chaos import everything — this wildcard import described itself.",
+  "Five levels of relative imports deep. We are so far from home.",
 ];
 
 const _pythonComplexityRoasts = [
@@ -360,6 +500,8 @@ const pythonDocstringRoasts = [
   "Docstrings are optional. So is understanding your code in 6 months.",
   "Your functions are mysteries wrapped in enigmas. Add a docstring.",
   "Self-documenting code is a myth. Your future self will thank you for docstrings.",
+  "No docstrings: the ancient art of leaving future teammates to suffer.",
+  "This function's name is `process`. It processes. What? Mystery.",
 ];
 
 const pythonSmellRoasts = [
@@ -367,20 +509,28 @@ const pythonSmellRoasts = [
   "Mutable default arguments: the gift that keeps on mutating.",
   "This much global state makes singletons look elegant.",
   "Your functions are nested deeper than your tech debt.",
+  "bare except: the Pokémon Master of error handling — gotta catch 'em all.",
+  "Global variables: because local scope is for people who plan ahead.",
+  "This mutable default arg has been silently accumulating state since the first call. Good luck.",
 ];
 
 const pythonSecurityRoasts = [
-  "eval() in Python: because you want hackers to feel welcome.",
   "pickle.load() from untrusted data is just exec() with extra steps.",
   "shell=True with user input: RCE as a feature, not a bug.",
   "SQL string formatting: Little Bobby Tables approves.",
   "Hardcoded secrets in Python: because .env files are too mainstream.",
+  "Little Bobby Tables sends his regards to your f-string SQL query.",
+  "shell=True and user input: the villain origin story for your production server.",
+  "pickle from untrusted source: 'I have no idea what I'm deserializing and at this point I'm afraid to ask.'",
 ];
 
 const pythonDesignRoasts = [
   "This class has more methods than a Swiss Army knife has tools.",
   "A class with no methods is just a dict wearing a trench coat. Use @dataclass.",
   "4+ parent classes: your MRO looks like a family tree from the Habsburgs.",
+  "God class spotted. It does everything. It knows everything. It will not be refactored.",
+  "This class is a dict with anxiety. Use @dataclass.",
+  "Six parent classes deep. Python's MRO is writing its resignation letter.",
 ];
 
 const goErrorHandlingRoasts = [
@@ -388,24 +538,35 @@ const goErrorHandlingRoasts = [
   "_ = dangerousOperation() — the Go equivalent of 'it's fine.'",
   "Your error handling strategy appears to be 'hope.'",
   "panic() in production: because graceful degradation is overrated.",
+  "if err != nil { _ = err } — the most chaotic thing you can do in Go.",
+  "Go gives you errors. You gave them the silent treatment. They will not be silent forever.",
+  "panic() and recover(): a horror movie where you already know the ending.",
 ];
 
 const goLintRoasts = [
   "Unexported symbols don't need docs. Exported ones do. Guess which you forgot.",
   "Multiple init() functions: because one confusing startup sequence wasn't enough.",
   "Go proverbs say 'a little copying is better than a little dependency.' You took that personally.",
+  "Effective Go was written for a reason. This code is the reason.",
+  "Multiple init() calls: startup order is now a choose-your-own-adventure.",
 ];
 
 const rustUnsafeRoasts = [
   "unsafe {} — Rust's way of saying 'I know what I'm doing.' Do you, though?",
   "This much unsafe code defeats the purpose of choosing Rust.",
   "The borrow checker can't save you if you keep bypassing it.",
+  "You chose Rust for memory safety and then wrote unsafe {}. Interesting arc.",
+  "unsafe: I am speed. Also: I am undefined behaviour.",
+  "The borrow checker tried to protect you. You said no. The segfault is coming.",
 ];
 
 const rustClippyRoasts = [
   ".unwrap() everywhere: living dangerously, one None at a time.",
   "This much .clone() suggests a fundamental misunderstanding of ownership.",
   "todo!() in production: the Rust equivalent of 'I'll fix it later.'",
+  ".unwrap() on user input: a panic waiting for its moment to shine.",
+  "Clippy has 47 suggestions. You have 0 acknowledgements. Bold.",
+  ".clone().clone().clone() — the memory is leaving the building.",
 ];
 
 const javaSmellRoasts = [
@@ -413,24 +574,36 @@ const javaSmellRoasts = [
   "System.out.println in production — logging frameworks exist, you know.",
   "Empty catch blocks: because exceptions are just suggestions.",
   "God classes: when Single Responsibility Principle is just a suggestion.",
+  "AbstractSingletonProxyFactoryBean has entered the chat.",
+  "System.out.println: Java's way of saying 'I'll add proper logging later.' Later never came.",
+  "Empty catch block: the exception tried to tell you something. You covered your ears.",
+  "This class does so much it should be paying rent in every microservice.",
 ];
 
 const javaNamingRoasts = [
   "AbstractSingletonProxyFactoryBean called. It wants its naming convention back.",
   "Java naming conventions aren't optional. Even Java thinks so.",
   "Your constant naming is more chaotic than your class hierarchy.",
+  "IAbstractManagerFactoryHelperImpl: a name that describes everything and communicates nothing.",
+  "Naming things is hard. This name suggests it wasn't attempted.",
 ];
 
 const csharpSmellRoasts = [
   "#region is not architecture. It's a rug to sweep complexity under.",
   "Console.WriteLine in production? ILogger is right there.",
   "This class is so large it needs its own table of contents.",
+  "#region: collapsing complexity doesn't remove it, it just makes it easier to ignore.",
+  "Console.WriteLine: the poor man's Application Insights.",
+  "This class is doing so much it should file as an LLC.",
 ];
 
 const csharpAsyncRoasts = [
   "async void: the fire-and-forget-and-pray pattern.",
   ".Result and .Wait() — deadlocks as a service.",
   "Sync-over-async: because who needs scalability anyway.",
+  "async void: exceptions from this method disappear into the void. That's not a metaphor.",
+  ".Result on an async method: congratulations, you just reinvented blocking IO.",
+  "The thread pool called. It's exhausted. Literally.",
 ];
 
 const vueIssuesRoasts = [
@@ -438,6 +611,9 @@ const vueIssuesRoasts = [
   "v-for without :key — Vue is now doing the hokey pokey trying to track your list.",
   "Deep watcher? Congratulations, you've opted into re-running everything for no reason.",
   "This component watches everything deeply. Your CPU feels watched.",
+  "v-for without :key: Vue is trying its best. You are not helping.",
+  "Options API in a Vue 3 project is nostalgia as a code smell.",
+  "This deep watcher is re-running on every keystroke. Your laptop fan agrees.",
 ];
 
 const angularIssuesRoasts = [
@@ -445,6 +621,9 @@ const angularIssuesRoasts = [
   "Direct DOM manipulation in Angular: ElementRef and prayers.",
   "(event: any) — typed strictly, except when it matters.",
   "Without OnPush, change detection runs so often it should get overtime pay.",
+  "Angular's change detection is thorough. Without OnPush, it's also relentless.",
+  "ElementRef and direct DOM access: we have a renderer, we have signals, and yet.",
+  "Typed strictly everywhere except the event handler. Classic.",
 ];
 
 const svelteIssuesRoasts = [
@@ -452,6 +631,9 @@ const svelteIssuesRoasts = [
   "A button without aria-label is just a mystery rectangle to screen readers.",
   "Svelte is supposed to simplify things. This fetch() in $: disagrees.",
   "Your reactive statements have more side effects than a clearance-sale medication.",
+  "This $: block runs every time anything changes. It will run a lot.",
+  "A button with no label is a UX mystery box. Screen readers hate mystery boxes.",
+  "Svelte: the framework that compiles away the framework. This code is fighting back.",
 ];
 
 const expressIssuesRoasts = [
@@ -459,6 +641,10 @@ const expressIssuesRoasts = [
   "No rate limiting: your API is accepting all requests, including the ones from bots.",
   "Synchronous file I/O in a route handler: welcome to the event loop queue.",
   "One bad request handler away from taking down the whole server.",
+  "No rate limiting: your API welcomes bots, scrapers, and bad actors with open arms.",
+  "fs.readFileSync in a route handler: every request now blocks the entire server. Nice.",
+  "Unhandled promise rejection in a route: the server will crash. It's not a matter of if.",
+  "Express error handler missing: errors go to /dev/null and production goes down.",
 ];
 
 const fastapiIssuesRoasts = [
@@ -466,6 +652,9 @@ const fastapiIssuesRoasts = [
   "Sync endpoint in FastAPI — you picked the async framework and blocked the event loop anyway.",
   "POST without status_code: the client has to guess if it worked. Good luck.",
   "No response_model means no validation, no docs, and no regrets — until there are regrets.",
+  "FastAPI without response_model: the Swagger docs are now a work of abstract fiction.",
+  "def instead of async def in FastAPI: you picked the async framework and turned it off.",
+  "POST returning 200 for a created resource. HTTP status codes are suggestions, apparently.",
 ];
 
 const depAuditRoasts = [
@@ -473,6 +662,10 @@ const depAuditRoasts = [
   "npm audit called — it's not happy about your life choices.",
   "CVEs in production: turning 'works on my machine' into 'hacked on your machine'.",
   "Supply chain attack? More like supply chain welcome mat.",
+  "npm audit: a cry for help you keep dismissing.",
+  "CVE in a prod dependency: the gift that ships with your application.",
+  "Your supply chain has more holes than the plot of a heist movie.",
+  "The vulnerability scanner found issues. You found reasons to ignore them. One of you is right.",
 ];
 
 const depOutdatedRoasts = [
@@ -480,13 +673,19 @@ const depOutdatedRoasts = [
   "npm outdated: a love letter from the past.",
   "Your dependencies are aging like milk, not wine.",
   "These major version upgrades won't do themselves. (They will not, in fact, do themselves.)",
+  "Some of these packages were last updated when tabs vs spaces was still a debate.",
+  "npm outdated is running a eulogy for your dependencies.",
+  "Major version behind: the changelog is long, the breaking changes are many, the update is overdue.",
+  "These packages are so outdated they remember when JavaScript was just for form validation.",
 ];
 
 const rubyRoasts = [
   "Ruby: where every class is a God class waiting to happen.",
   "This method is so complex it needs its own retrospective.",
-  "eval() in Ruby: because you miss the XSS vulnerabilities from your PHP days.",
   "No frozen_string_literal? Your strings are living their best mutable life.",
+  "method_missing: the Ruby equivalent of 'I'll figure it out at runtime.'",
+  "This class reopens three other classes. Ruby allows it. That doesn't mean you should.",
+  "Monkey-patching String in 2026: bold, chaotic, deeply personal.",
 ];
 
 const phpRoasts = [
@@ -494,6 +693,10 @@ const phpRoasts = [
   "This code predates prepared statements. And dignity.",
   "MD5 for passwords in 2026. Bold choice.",
   "var_dump() in production: the poor man's observability platform.",
+  "Little Bobby Tables has a summer home in your database thanks to this query.",
+  "MD5 passwords: cracked before the response even reaches the client.",
+  "var_dump() in a prod endpoint: your users are now debugging with you, whether they want to or not.",
+  "This PHP predates PSR standards. It predates several PHP versions. It predates regret.",
 ];
 
 const swiftRoasts = [
@@ -501,6 +704,10 @@ const swiftRoasts = [
   "This SwiftUI view has more @State than a government agency.",
   "print() for debugging in production. Classic.",
   "Callback pyramid: the Great Pyramid of Giza, but for closures.",
+  "Force unwrap on user data: a crash report waiting to be filed.",
+  "This view has so much @State it should file for statehood.",
+  "The callback pyramid is so deep it has base camp and a summit team.",
+  "print() in production: your logs are now Xcode console screenshots.",
 ];
 
 const kotlinRoasts = [
@@ -508,6 +715,10 @@ const kotlinRoasts = [
   "GlobalScope: structured concurrency's nemesis.",
   "runBlocking in a coroutine. Thread blocked. Dreams crushed.",
   "println() for logging: Kotlin 101, lesson 0.",
+  "!! operator: Kotlin tried to protect you from null. You said no thanks.",
+  "GlobalScope.launch: fire, forget, and crash mysteriously three hours later.",
+  "runBlocking inside a coroutine: the deadlock is theoretical until it isn't.",
+  "println() in production Kotlin: the Android logcat is right there.",
 ];
 
 const testQualityRoasts = [
@@ -516,6 +727,10 @@ const testQualityRoasts = [
   "Skipped tests: the software equivalent of 'we'll fix it in post'.",
   ".only in CI: one test to rule them all, one test to find them, one test to bring the pipeline down.",
   "No assertions? You're not testing, you're just running code for fun.",
+  "expect(true).toBe(true) — a test that tests the concept of testing, nothing else.",
+  "test.skip: the CI pipeline is green. The problem is not solved. These are different things.",
+  "This test has no assertions. It passes every time. It tests nothing. Green checkmark. 🤡",
+  "describe('everything', () => it('works', () => {})) — the test suite as performance art.",
 ];
 
 const databaseRoasts = [
@@ -525,6 +740,11 @@ const databaseRoasts = [
   "sync({ force: true }) in production. Bold strategy. Let's see how it pays off.",
   "No indexes. Your database is doing a full table scan and judging you.",
   "Hardcoded database credentials. Committing to the problem, one git push at a time.",
+  "N+1 queries: you asked for one thing and got a DDoS of your own making.",
+  "SELECT * FROM users — your DBA is already writing their resignation.",
+  "sync({ force: true }) in production drops all tables. This is not a simulation.",
+  "No indexes on a 10M row table. The query planner has left the building.",
+  "findAll() with no limit: pagination exists. Use it before the table does.",
 ];
 
 const configAuditRoasts = [
@@ -533,6 +753,10 @@ const configAuditRoasts = [
   "TypeScript without strict mode is just JavaScript with extra keystrokes.",
   "skipLibCheck: true — because type errors in your dependencies are someone else's problem.",
   "No Prettier config. Every file has its own formatting style. Delightful.",
+  "strict: false — TypeScript is now suggestions-only. Congrats on your JavaScript.",
+  "No ESLint: every PR is a negotiation over style instead of correctness.",
+  "skipLibCheck: true is the 'not my problem' of TypeScript configuration.",
+  "No Prettier config: tabs vs spaces, decided per-file, per-dev, per-mood.",
 ];
 
 const bundleSizeRoasts = [
@@ -540,6 +764,10 @@ const bundleSizeRoasts = [
   "This bundle is so big it needs its own loading screen.",
   "Bundle size regression detected. Time to blame that one npm install.",
   "Your JavaScript bundle is now larger than some operating systems.",
+  "Users on 4G have filed a complaint.",
+  "The bundle is so large it arrives before the HTML but after the user left.",
+  "Webpack looked at your imports and cried.",
+  "This bundle ships more JS than the Apollo 11 guidance computer had total memory. Reflect on that.",
 ];
 
 const licenseRoasts = [
@@ -548,6 +776,9 @@ const licenseRoasts = [
   "Unknown license: Schrödinger's compliance — you don't know until a lawyer opens the box.",
   "LGPL: the polite version of 'we're watching you'.",
   "Mixing GPL with proprietary code. Legal's going to love this conversation.",
+  "Unknown license: Schrödinger's lawsuit — compliance is both violated and fine until legal observes it.",
+  "AGPL in a SaaS dependency: your lawyers are going to need a moment.",
+  "GPL inheritance: it's not just a license, it's a lifestyle your whole codebase now shares.",
 ];
 
 const comboRoasts = [
@@ -563,6 +794,13 @@ const comboRoasts = [
   "Broad problems suggest systemic causes, not isolated mistakes.",
   "The findings span architecture, style, security, and testing. A full house.",
   "This codebase is doing a lot of things. Unfortunately, several of them are wrong.",
+  // meme refs
+  "The issues said 'we're not so different, you and I' and they were right.",
+  "This is fine. 🔥 (Narrator: it was not fine.)",
+  "Every category lit up. It's giving Christmas tree, but make it a production incident.",
+  "The findings didn't just multiply — they organised.",
+  "We found problems in places we weren't even looking. Bonus content.",
+  "Bro's codebase said 'why have one problem when you can have them all.'",
 ];
 
 const prSizeRoasts = [
@@ -574,6 +812,12 @@ const prSizeRoasts = [
   "The git diff for this PR has its own table of contents.",
   "Shipping a PR this size is optimistic. Reviewing it is fiction.",
   "A 40-file PR is not a feature. It's a hostage situation.",
+  // meme refs
+  "LGTM 👍 (did not read)",
+  "This PR is so large the reviewer approved it out of self-preservation.",
+  "One PR, 47 files, zero reviewers who finished reading it.",
+  "PR so big it should have been a branch, a milestone, and a retrospective.",
+  "The diff is longer than the feature spec. That's a flag.",
 ];
 
 function pick<T>(arr: T[]): T {
