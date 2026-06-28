@@ -2,11 +2,8 @@ import fs from "fs";
 import path from "path";
 
 export interface CIConfig {
-  threshold: number;
-  prComment: boolean;
-  sarif: boolean;
-  nodeVersion: string;
-  packageManager: "npm" | "yarn" | "pnpm";
+  threshold?: number;
+  aiRoasts?: boolean;
 }
 
 export function detectPackageManager(
@@ -17,83 +14,47 @@ export function detectPackageManager(
   return "npm";
 }
 
-export function generateCIWorkflow(config: CIConfig): string {
-  const { threshold, prComment, sarif, nodeVersion, packageManager } = config;
+export function generateCIWorkflow(config: CIConfig = {}): string {
+  const { threshold, aiRoasts } = config;
 
-  const installCmd =
-    packageManager === "yarn"
-      ? "yarn install --frozen-lockfile"
-      : packageManager === "pnpm"
-        ? "pnpm install --frozen-lockfile"
-        : "npm ci";
+  const failBelow = threshold !== undefined
+    ? `\n          fail-below: "${threshold}"`
+    : "";
 
-  const scanCmd = [
-    "npx roast-my-codebase --json",
-    `--threshold ${threshold}`,
-    prComment ? "--pr-comment" : "",
-    sarif ? "--sarif-file" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  // Build permissions block
-  const permissionsLines: string[] = ["      contents: read"];
-  if (prComment) permissionsLines.push("      pull-requests: write");
-  if (sarif) permissionsLines.push("      security-events: write");
-  const permissionsBlock = permissionsLines.join("\n");
-
-  // Build optional SARIF upload step
-  const sarifStep = sarif
-    ? `
-      - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: .roast-results.sarif`
+  const aiBlock = aiRoasts
+    ? `\n          ai-roasts: "true"\n          anthropic-api-key: \${{ secrets.ANTHROPIC_API_KEY }}`
     : "";
 
   return `name: Roast My Codebase
 
 on:
-  push:
-    branches: [main, master]
   pull_request:
-    branches: [main, master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
 
 jobs:
   roast:
-    name: Roast Codebase
     runs-on: ubuntu-latest
-    permissions:
-${permissionsBlock}
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: '${nodeVersion}'
-          cache: '${packageManager}'
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: ${installCmd}
-
-      - name: Roast the codebase
-        run: ${scanCmd}
-        env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}${sarifStep}
+      - uses: rahuldk1105/roast-my-codebase@v1
+        with:
+          github-token: \${{ secrets.GITHUB_TOKEN }}${failBelow}${aiBlock}
 `;
 }
 
 export function writeCIWorkflow(
   rootDir: string,
-  config: CIConfig
+  config: CIConfig = {}
 ): { path: string; alreadyExists: boolean } {
   const workflowsDir = path.join(rootDir, ".github", "workflows");
   const filePath = path.join(workflowsDir, "roast.yml");
 
-  // Normalise to forward slashes for display consistency
   const displayPath = filePath.split(path.sep).join("/");
 
   if (fs.existsSync(filePath)) {
@@ -104,8 +65,7 @@ export function writeCIWorkflow(
     fs.mkdirSync(workflowsDir, { recursive: true });
   }
 
-  const yaml = generateCIWorkflow(config);
-  fs.writeFileSync(filePath, yaml, "utf-8");
+  fs.writeFileSync(filePath, generateCIWorkflow(config), "utf-8");
 
   return { path: displayPath, alreadyExists: false };
 }

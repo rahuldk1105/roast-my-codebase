@@ -77,7 +77,7 @@ import { renderHistoryReport, renderTrendSummary } from "../history/render.js";
 import { renderHtmlReport, saveHtmlReport, renderSarifReport, saveSarifReport, detectPRContext, postPRComment, renderJUnitReport, saveJUnitReport, isGitHubActions, writeGitHubStepSummary, saveAllReports, buildFolderTree, renderHotmap } from "../report/index.js";
 import { getChangedFiles, filterFindingsByFiles } from "../incremental/index.js";
 import { getChangedLineRanges, filterFindingsByChangedLines } from "../incremental/diff.js";
-import { detectPackageManager, writeCIWorkflow } from "../ci/index.js";
+import { writeCIWorkflow } from "../ci/index.js";
 import { checkRegression, formatRegressionOutput } from "../regression/index.js";
 import { checkTrendGating, formatTrendResult } from "../trend/index.js";
 import { installPreCommitHook, uninstallPreCommitHook } from "../hooks/index.js";
@@ -188,13 +188,9 @@ export function createCli(): Command {
       }
 
       if (options.initCi) {
-        const pm = detectPackageManager(rootDir);
         const ciConfig = {
-          threshold: options.threshold ?? 60,
-          prComment: true,
-          sarif: true,
-          nodeVersion: "20.x",
-          packageManager: pm,
+          threshold: options.threshold,
+          aiRoasts: options.aiRoasts,
         };
         const result = writeCIWorkflow(rootDir, ciConfig);
         if (result.alreadyExists) {
@@ -202,7 +198,7 @@ export function createCli(): Command {
           console.log(chalk.dim("  Delete it and re-run to regenerate.\n"));
         } else {
           console.log(chalk.green(`\n✓ Created ${result.path}\n`));
-          console.log(chalk.dim("  Add GITHUB_TOKEN secret in repo settings if not already present.\n"));
+          console.log(chalk.dim("  Uses rahuldk1105/roast-my-codebase@v1 — no extra secrets needed.\n"));
           console.log(chalk.dim("  Commit and push to activate.\n"));
         }
         process.exit(0);
