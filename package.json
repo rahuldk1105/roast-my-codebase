@@ -41,6 +41,13 @@
   "engines": {
     "node": ">=20"
   },
+  "socket": {
+    "allow": [
+      "network",
+      "shell"
+    ],
+    "comment": "Network: user-triggered webhook notifications (--notify) and GitHub PR comments (--pr-comment). Shell: spawns git/npm as subprocess with argument arrays (no shell interpolation) for git-insights, dep-health, and incremental diff scanning."
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
     "@inquirer/prompts": "^8.5.2",
@@ -50,6 +57,7 @@
     "chokidar": "^5.0.0",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.3",
+    "open": "^11.0.0",
     "ora": "^9.4.1",
     "picomatch": "^4.0.4"
   },

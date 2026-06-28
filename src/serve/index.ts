@@ -1,5 +1,4 @@
 import http from 'http';
-import { execFile } from 'child_process';
 import chokidar from 'chokidar';
 import { RoastReport, Finding } from '../types/index.js';
 
@@ -909,16 +908,9 @@ export function startDashboard(
       console.log(`\n✓ Dashboard running at http://localhost:${actualPort}`);
       console.log('  Press Ctrl+C to stop\n');
 
-      // Open browser — use execFile with argument array (no shell, no injection)
+      // Open browser using the `open` package (audited, no direct shell usage)
       const url = `http://localhost:${actualPort}`;
-      if (process.platform === 'win32') {
-        // cmd.exe /c start is the standard way to open a URL on Windows
-        execFile('cmd.exe', ['/c', 'start', '', url], () => { /* best-effort */ });
-      } else if (process.platform === 'darwin') {
-        execFile('open', [url], () => { /* best-effort */ });
-      } else {
-        execFile('xdg-open', [url], () => { /* best-effort */ });
-      }
+      import('open').then(mod => mod.default(url)).catch(() => { /* best-effort */ });
 
       // Start file watcher if requested
       if (options?.watch && options?.rootDir && options?.rescan) {
