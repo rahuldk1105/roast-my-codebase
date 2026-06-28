@@ -1,6 +1,6 @@
 {
   "name": "roast-my-codebase",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "description": "Get roasted. Get better. Ship faster. A CLI that analyzes your codebase and delivers brutally honest (but funny) feedback.",
   "type": "module",
   "main": "dist/index.js",
