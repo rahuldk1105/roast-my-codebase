@@ -1,0 +1,25 @@
+name: Roast My Codebase
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  roast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: rahuldk1105/roast-my-codebase@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment to fail PR if health score drops below 60:
+          # fail-below: "60"
+          # Uncomment for AI-powered roasts:
+          # ai-roasts: "true"
+          # anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
